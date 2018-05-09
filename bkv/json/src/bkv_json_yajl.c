@@ -4,6 +4,9 @@
 #include <yajl/yajl_parse.h>
 #include "bkv_val.h"
 #include "bkv_json_yajl.h"
+#ifdef HAS_DICO
+#include "bkv_dico.h"
+#endif
 #include "json_plugs.h"
 
 typedef struct {
@@ -148,7 +151,7 @@ bkv_json_get_string(void *ctx,
     int                       l_ret;
     (void)ctx;
     if ((NULL != l_ctx) && (NULL != stringVal)){
-        if (-1 == (l_ret = bkv_kv_str_add(l_ctx->data_handle,l_yajl_ctx->key_index,(const char*)stringVal,stringLen))){
+        if (-1 == (l_ret = bkv_kv_str_add(l_ctx->data_handle,l_yajl_ctx->key_index,stringVal,stringLen))){
         }
     }
     return (1);
@@ -228,7 +231,7 @@ bkv_json_end_array(void * ctx){
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     if (NULL != l_ctx){
         l_ctx->deep--;
-        if ((l_ctx->deep > 0) || (NULL == l_ctx->dico_handle)){
+        if (l_ctx->deep > 0){
             if (-1 == (l_ret = bkv_kv_array_close(l_ctx->data_handle))){
             }
             else {
@@ -244,14 +247,24 @@ bkv_json_end_array(void * ctx){
 
 static int
 bkv_json_map_keys(void *ctx, const unsigned char *key, size_t keylen){
+    bkv_error_t l_ret=BKV_INV_ARG;
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
     if (NULL != l_ctx){
+#ifndef HAS_DICO
         if (BKV_OK != bkv_kv_str_add(l_ctx->dico_handle,++l_yajl_ctx->key_index,(const char *)key,keylen)){
             return(0);
         }
+#else
+        if (BKV_OK != (l_ret=bkv_dico_key_add(l_ctx->dico_handle,
+                                              ++l_yajl_ctx->key_index,
+                                              key,
+                                              keylen))){
+            return(l_ret);
+        }
+#endif
     }
-    return (1);
+    return (l_ret);
 }
 
 static int
@@ -281,11 +294,6 @@ bkv_from_json_yajl_parse(bkv_from_json_ctx_t *p_ctx,
     if ((l_yajl_handle = yajl_alloc(&callbacks, &s_alloc_funcs, p_ctx)) == NULL) {
         printf("Failed to allocate yajl handle");
         goto error;
-    }
-    if (NULL != p_ctx->dico_handle){
-        if (BKV_OK != bkv_kv_map_open(p_ctx->dico_handle,BKV_NO_KEY)){
-            goto error;
-        }
     }
     if ((l_status = yajl_parse(l_yajl_handle, ptr, len)) != yajl_status_ok) {
         yajl_free(l_yajl_handle);
@@ -348,47 +356,50 @@ bkv_to_json_yajl_map_open(bkv_to_json_ctx_t *p_ctx,
     return(l_ret);
 }
 
-static int
+static bkv_error_t
 bkv_to_json_yajl_map_close(bkv_to_json_ctx_t *p_ctx){
-    int                       l_ret=0;
+    bkv_error_t             l_ret=BKV_OK;
     bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
     if (NULL != l_ctx){
         if (yajl_gen_status_ok != yajl_gen_map_close(l_ctx->g)){
             printf("Failed to add map close\n");
-            l_ret=1;
+            l_ret=BKV_INV_STATE;
         }
 
     }
     return(l_ret);
 }
 
-static int
+static bkv_error_t
 bkv_to_json_yajl_array_open(bkv_to_json_ctx_t *p_ctx,
                             int                array_len,
                             const uint8_t     *keyname,
                             int                keylen) {
-    int                       l_ret=0;
+    bkv_error_t   l_ret=BKV_OK;
     bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
     (void)array_len;
     if (NULL != l_ctx){
         if (yajl_gen_status_ok != yajl_gen_string(l_ctx->g,keyname,keylen)){
+            l_ret=BKV_INV_STATE;
         } 
         else if (yajl_gen_status_ok != yajl_gen_array_open(l_ctx->g)){
+            l_ret=BKV_INV_STATE;
             printf("Failed to add array open\n");
-            l_ret=1;
         }
     }
     return(l_ret);
 }
 
-static int
+static bkv_error_t
 bkv_to_json_yajl_array_close(bkv_to_json_ctx_t *p_ctx) {
-    int                       l_ret=0;
+    bkv_error_t   l_ret=BKV_INV_ARG;
     bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
     if (NULL != l_ctx){
         if (yajl_gen_status_ok != yajl_gen_array_close(l_ctx->g)){
             printf("Failed to add close array\n");
-            l_ret=1;
+        }
+        else {
+            l_ret=BKV_OK;
         }
     }
     return(l_ret);

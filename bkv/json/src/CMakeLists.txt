@@ -15,7 +15,7 @@ add_library(${BKV_JSON_LIB} SHARED
 	bkv_json.c
 	${SRCS})
 
-target_link_libraries(${BKV_JSON_LIB} bkv ${LIBS})
+target_link_libraries(${BKV_JSON_LIB} bkv bkv_dico ${LIBS})
 
 target_include_directories(${BKV_JSON_LIB} PUBLIC ${BKV_JSON_INC})
 

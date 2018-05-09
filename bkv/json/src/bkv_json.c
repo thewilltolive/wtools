@@ -1,15 +1,21 @@
 #include <stdio.h>
+#ifdef HAS_DICO
+#include "bkv_dico.h"
+#endif
 #include "bkv_json.h"
 #include "bkv_val.h"
 #include "json_plugs.h"
 
 
 int bkv_from_json(bkv_from_json_parser_t p,
-                uint8_t *ptr,
-                int      len,
-                bkv_t   *h){
+                  uint8_t *ptr,
+                  int      len,
+                  bkv_t   *h){
     bkv_from_json_ctx_t l_ctx=BKV_FROM_JSON_CTX_INIT;
     bkv_create_t        l_bkv_create=BKV_CREATE_INIT;
+#ifdef HAS_DICO
+    bkv_dico_create_t   l_bkv_dico_create=BKV_DICO_CREATE_INIT;
+#endif
     bkv_error_t         l_error;
 
     l_bkv_create.create_type=BKV_CREATE_TYPE_WORK_IN_RAM;
@@ -17,25 +23,48 @@ int bkv_from_json(bkv_from_json_parser_t p,
         return(-1);
     }
 
+#ifdef HAS_DICO
+#ifdef BKV_CACHED_DICO
+    l_bkv_dico_create.type=BKV_DICO_TYPE_CACHED;
+#else
+    l_bkv_dico_create.type=BKV_DICO_TYPE_DIRECT;
+#endif
+    if (BKV_OK != bkv_dico_create(&l_bkv_dico_create,&l_ctx.dico_handle)){
+        return(-1);
+    }
+#else
     if (BKV_OK != bkv_create(&l_bkv_create,&l_ctx.dico_handle)){
         return(-1);
     }
+    if (BKV_OK != bkv_kv_map_open(p_ctx->dico_handle,BKV_NO_KEY)){
+        (return(-1);
+    }
+#endif
     if (BKV_OK != (l_error=p->from_json_parse(&l_ctx,ptr,len))){
         return(l_error);
     }
     if (NULL != l_ctx.dico_handle){
-        if (BKV_OK != (l_error = bkv_kv_map_close(l_ctx.dico_handle))){
+        bkv_t l_bkv_dico_handle=NULL;
+#ifdef HAS_DICO
+        if (BKV_OK != (l_error = bkv_dico_destroy(l_ctx.dico_handle,&l_bkv_dico_handle))){
         }
+#else
+        l_bkv_dico_handle = l_ctx.dico_handle;
+        if (BKV_OK != (l_error = bkv_kv_map_close(l_bkv_dico_handle))){
+        }
+#endif
         else if (BKV_OK != (l_error = bkv_kv_key_add(l_ctx.data_handle,BKV_DICO_KEY))){
             printf("Failed to add dico key\n");
         }
-        else if (BKV_OK != (l_error = bkv_append(l_ctx.data_handle,l_ctx.dico_handle))){
+        else if (BKV_OK != (l_error = bkv_append(l_ctx.data_handle,l_bkv_dico_handle))){
             printf("Failed to append dico\n");
         }
         else if (BKV_OK != (l_error = bkv_kv_map_close(l_ctx.data_handle))){
             printf("Failed to close map");
         }
-        bkv_destroy(l_ctx.dico_handle);
+#ifndef HAS_DICO
+        bkv_destroy(l_bkv_dico_handle);
+#endif
     }
 
     *h=l_ctx.data_handle;
@@ -43,7 +72,7 @@ int bkv_from_json(bkv_from_json_parser_t p,
 }
 
 
-static bkv_parse_retval_t 
+static bkv_parse_retval_t
 bkv_to_json_map_open(void *p_data, uint8_t *p_ptr, bkv_key_t key){
     bkv_parse_retval_t l_ret=BKV_PARSE_ACTION_NONE;
     bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
@@ -73,16 +102,16 @@ bkv_to_json_map_open(void *p_data, uint8_t *p_ptr, bkv_key_t key){
     return(l_ret);
 }
 
-static bool
+static bkv_parse_retval_t
 bkv_to_json_map_close(void *p_data, bkv_key_t key){
-    bool               l_ret=true;
+    bkv_parse_retval_t l_ret=BKV_PARSE_ACTION_NONE;
     bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
     (void)key;
     if (NULL != l_ctx){
         if (BKV_OK != l_ctx->parser->to_json_map_close_fn(l_ctx)){
-            l_ret=false;
+            printf("Failed to close map\n");
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
         }
-
     }
     return(l_ret);
 }

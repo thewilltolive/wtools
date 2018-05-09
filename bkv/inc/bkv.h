@@ -104,7 +104,7 @@ int bkv_size(bkv_t h);
  * @param len length of the string.
  * @return BKV_OK in case of success.
  */
-int bkv_kv_str_add(bkv_t h, bkv_key_t key, const char *str, int len);
+int bkv_kv_str_add(bkv_t h, bkv_key_t key, const uint8_t *str, int len);
 int bkv_kv_key_add(bkv_t h, bkv_key_t key);
 int bkv_append(bkv_t h, bkv_t a);
 int bkv_kv_map_open(bkv_t h, bkv_key_t key);

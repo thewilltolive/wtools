@@ -32,7 +32,11 @@ typedef struct {
 
 typedef struct {
     bkv_t                          data_handle;
+#ifdef HAS_DICO
+    void *                         dico_handle;
+#else
     bkv_t                          dico_handle;
+#endif
     int                            deep;
     bool                           in_array;
     void                          *priv_data;
@@ -47,9 +51,9 @@ struct bkv_from_json_parser_s {
 struct bkv_to_json_parser_s{
     int (*to_json_init)(bkv_to_json_ctx_t *l_ctx);
     bkv_error_t (*to_json_map_open_fn)(bkv_to_json_ctx_t *l_ctx, const uint8_t *key, int keylen);
-    int (*to_json_map_close_fn)(bkv_to_json_ctx_t *l_ctx);
-    int (*to_json_array_open_fn)(bkv_to_json_ctx_t *l_ctx, int array_len,const uint8_t *key, int keylen);
-    int (*to_json_array_close_fn)(bkv_to_json_ctx_t *l_ctx);
+    bkv_error_t (*to_json_map_close_fn)(bkv_to_json_ctx_t *l_ctx);
+    bkv_error_t (*to_json_array_open_fn)(bkv_to_json_ctx_t *l_ctx, int array_len,const uint8_t *key, int keylen);
+    bkv_error_t (*to_json_array_close_fn)(bkv_to_json_ctx_t *l_ctx);
     int (*to_json_uint16_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen, uint16_t value);
     bkv_error_t (*to_json_float_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen, float f);
     bkv_error_t (*to_json_array_float_fn)(bkv_to_json_ctx_t *l_ctx, float f);

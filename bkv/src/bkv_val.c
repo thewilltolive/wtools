@@ -63,7 +63,7 @@ val_foreach(bkv_val_t           *v,
     l_ptr=l_base;
 
     do {
-        l_ret=0;
+        l_ret=BKV_OK;
         l_hdr_type = (l_ptr[0] >> 4) & 0xF;
         l_key = ((l_ptr[0] & 0xF) << 8) + ( l_ptr[1] & 0xFF);
 
@@ -72,6 +72,10 @@ val_foreach(bkv_val_t           *v,
             l_ret=p_callbacks->map_open(p_data,l_ptr,l_key);
             if (0 != (l_ret & BKV_PARSE_ACTION_GOTO_END_MAP)){
                 l_map_length=((l_ptr[2] & 0xFF) << 8) + ( l_ptr[3] & 0xFF);
+                if (0 == l_map_length){
+                    printf("Invalid bkv: map not closed\n");
+                    return(BKV_INV_ARG);
+                }
                 l_ptr+=l_map_length;
             }
             else {
@@ -84,7 +88,7 @@ val_foreach(bkv_val_t           *v,
         case HDR_TYPE_MAP_CLOSE:
             l_ptr+=HDR_SIZE+MAP_CLOSE_VALUE_SIZE;
             l_ctx.map_deep--;
-            l_continue=p_callbacks->map_close(p_data,l_key);
+            l_ret=p_callbacks->map_close(p_data,l_key);
             if (0 == l_ctx.map_deep){
                 l_ret=BKV_PARSE_ACTION_STOP_LOOP;
             }
@@ -137,10 +141,10 @@ val_foreach(bkv_val_t           *v,
 
         }
     } while((0 == (l_ret & BKV_PARSE_ACTION_STOP_LOOP)) && 
-            ((int)(l_ptr - l_base) > 0) && 
+            ((int)((int)l_ptr - (int)l_base) > 0) && 
             (true==l_continue));
 
-    return(0);
+    return(BKV_OK);
 }
 
 typedef struct {
@@ -173,9 +177,9 @@ static bkv_parse_retval_t  bkv_val_get_map_open(void *p_data, uint8_t *p_ptr, bk
 
     return(l_ret);
 }
-static bool
+static bkv_parse_retval_t
 bkv_val_get_map_close(void *p_data, bkv_key_t key){
-    bool l_ret=true;
+    bool l_ret=BKV_PARSE_ACTION_NONE;
     (void)p_data;
     (void)key;
     return(l_ret);

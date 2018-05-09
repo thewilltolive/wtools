@@ -24,12 +24,13 @@ extern "C"
 
 
 typedef enum {
-    BKV_OK = 0,
-    BKV_KO = -1, 
-    BKV_HDL_INV = -2, /*!< Invalid Handle, already closed, ...*/
-    BKV_HDL_ERR = -3, /*!< Handle with wrong creation option for this operation. */
-    BKV_HDL_MEM = -4, /*!< Memory allocation Issue. */
-    BKV_INV_ARG = -5, /*!< Memory allocation Issue. */
+    BKV_OK        = 1,
+    BKV_KO        = -1,
+    BKV_HDL_INV   = -2, /*!< Invalid Handle, already closed, ...*/
+    BKV_HDL_ERR   = -3, /*!< Handle with wrong creation option for this operation. */
+    BKV_HDL_MEM   = -4, /*!< Memory allocation Issue. */
+    BKV_INV_ARG   = -5, /*!< Invalid Argument. */
+    BKV_INV_STATE = -6, /*!< Invalid Argument. */
     BKV_KEY_OUT_OF_RANGE
 } bkv_error_t;
 

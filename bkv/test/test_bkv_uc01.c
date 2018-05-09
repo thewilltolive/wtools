@@ -70,7 +70,7 @@ static void test_bkv_str(void){
     l_bkv_create.mode=0777;
     CU_ASSERT_EQUAL_FATAL(0,bkv_create(&l_bkv_create,&l_handle));
     CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_open(l_handle,BKV_NO_KEY));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_str_add(l_handle,l_key,l_value,strlen(l_value)));
+    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_str_add(l_handle,l_key,(const uint8_t*)l_value,strlen(l_value)));
     CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_close(l_handle));
     CU_ASSERT_EQUAL_FATAL(0,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
     CU_ASSERT_EQUAL_FATAL(0,bkv_val_init(&l_val,l_ptr));

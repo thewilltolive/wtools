@@ -17,7 +17,7 @@ static int json_tools_node_compare(yajl_val a,
             return(strcmp(a->u.string,b->u.string));
             break;
         case yajl_t_number:
-            if (a->u.number.i != b->u.number.i){
+            if (!abs(a->u.number.d - b->u.number.d)<0.001){
                 return(-1);
             }
             break;
