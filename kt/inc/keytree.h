@@ -93,6 +93,14 @@ struct wg_key_s
 };
 
 /**
+ * @brief Callback used to return a dictionnary element. 
+ * @param elem the dictionnary element.
+ * @param p_data the private data.
+ * @return #w_error_t
+ */
+typedef w_error_t (*wg_keytree_fn_t)(keytree_elem_t *elem, void *p_data);
+
+/**
  ** @brief Generates a keytree from a word list.
  ** @param[in] wordlist word list to analyze.
  ** @param[out] key_head head of the returned tree.
@@ -106,6 +114,8 @@ w_error_t wg_keytree_create(keytree_list_t  *wordlist,
 w_error_t wg_keytree_add(keytree_head_t *head,
                          keytree_elem_t *e);
 
+w_error_t wg_keytree_destroy(keytree_head_t *e);
+
 /**
  ** @brief Compares a string to the keytree.
  ** @retval W_NO_ERROR        if the string str is found in the key tree.
@@ -114,6 +124,16 @@ w_error_t wg_keytree_add(keytree_head_t *head,
 w_error_t wg_keytree_strcmp(keytree_head_t  *key_head,
                             const char     *str);
 
+/**
+ * @brief Loops on each dictionnary element and provide each element in the #wg_keytree_fn_t callback.
+ * @param key_head
+ * @param fn
+ * @param p_data
+ * @return 
+ */
+w_error_t wg_keytree_foreach(keytree_head_t  *key_head,
+                             wg_keytree_fn_t  fn,
+                             void            *p_data);
 int wg_keytree_strcmp_isalnum(keytree_head_t  *key_head,
                               const char      *str);
 

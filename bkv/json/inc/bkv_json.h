@@ -27,10 +27,10 @@ extern "C"
 typedef struct bkv_from_json_parser_s *bkv_from_json_parser_t;
 typedef struct bkv_to_json_parser_s   *bkv_to_json_parser_t;
 
-int bkv_from_json(bkv_from_json_parser_t p,
-                  uint8_t *ptr,
-                  int      len,
-                  bkv_t   *h);
+bkv_error_t bkv_from_json(bkv_from_json_parser_t p,
+                          uint8_t *ptr,
+                          int      len,
+                          bkv_t   *h);
 
 int bkv_to_json(bkv_to_json_parser_t p,
                 bkv_t             h,

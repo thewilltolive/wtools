@@ -7,7 +7,8 @@
 #include "json_plugs.h"
 
 
-int bkv_from_json(bkv_from_json_parser_t p,
+bkv_error_t
+bkv_from_json(bkv_from_json_parser_t p,
                   uint8_t *ptr,
                   int      len,
                   bkv_t   *h){
@@ -19,8 +20,8 @@ int bkv_from_json(bkv_from_json_parser_t p,
     bkv_error_t         l_error;
 
     l_bkv_create.create_type=BKV_CREATE_TYPE_WORK_IN_RAM;
-    if (BKV_OK != bkv_create(&l_bkv_create,&l_ctx.data_handle)){
-        return(-1);
+    if (BKV_OK != (l_error = bkv_create(&l_bkv_create,&l_ctx.data_handle))){
+        return(l_error);
     }
 
 #ifdef HAS_DICO
@@ -29,15 +30,15 @@ int bkv_from_json(bkv_from_json_parser_t p,
 #else
     l_bkv_dico_create.type=BKV_DICO_TYPE_DIRECT;
 #endif
-    if (BKV_OK != bkv_dico_create(&l_bkv_dico_create,&l_ctx.dico_handle)){
-        return(-1);
+    if (BKV_OK != (l_error = bkv_dico_create(&l_bkv_dico_create,&l_ctx.dico_handle))){
+        return(l_error);
     }
 #else
-    if (BKV_OK != bkv_create(&l_bkv_create,&l_ctx.dico_handle)){
-        return(-1);
+    if (BKV_OK != (l_error = bkv_create(&l_bkv_create,&l_ctx.dico_handle))){
+        return(l_error);
     }
-    if (BKV_OK != bkv_kv_map_open(p_ctx->dico_handle,BKV_NO_KEY)){
-        (return(-1);
+    if (BKV_OK != (l_error = bkv_kv_map_open(p_ctx->dico_handle,BKV_NO_KEY))){
+        return(l_error);
     }
 #endif
     if (BKV_OK != (l_error=p->from_json_parse(&l_ctx,ptr,len))){

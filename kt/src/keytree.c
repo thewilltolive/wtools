@@ -409,6 +409,14 @@ int wg_keytree_strcmp_isalnum(keytree_head_t  *key_head,
     return(l_error);
 }
 
+w_error_t wg_keytree_foreach(keytree_head_t  *key_head,
+                             wg_keytree_fn_t  fn,
+                             void            *p_data){
+}
+
+w_error_t wg_keytree_destroy(keytree_head_t *key_head){
+}
+
 w_error_t wg_keytree_keyget(keytree_head_t  *key_head,
                             const char      *str,
                             keytree_elem_t **data){
