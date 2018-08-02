@@ -52,6 +52,7 @@ typedef struct
     uint32_t   nb_keys;
 
 } wg_key_list_t;
+#define WG_KEY_INIT { NULL, 0 }
 
 /**
  ** @brief Defines a alphanumeric key head of list.
@@ -77,13 +78,14 @@ typedef struct {
     keytree_elem_t *elems;
     int             nb_elems;
 } keytree_list_t;
+#define KEYTREE_LIST_INIT { NULL, 0 }
 
 /**
  ** @brief Defines a key structure.
  **/
 struct wg_key_s
 {
-    uint8_t key;  /*!< key value. */
+    /*uint8_t key; */ /*!< key value. */
     bool    end_of_word;
     union
     {
@@ -94,11 +96,15 @@ struct wg_key_s
 
 /**
  * @brief Callback used to return a dictionnary element. 
- * @param elem the dictionnary element.
- * @param p_data the private data.
+ * @param[in] p_key the current key
+ * @param[in] p_str the current string.
+ * @param[in] strlen the current string length
  * @return #w_error_t
  */
-typedef w_error_t (*wg_keytree_fn_t)(keytree_elem_t *elem, void *p_data);
+typedef w_error_t (*wg_keytree_fn_t)(wg_key_t   *p_key,
+                                     const char *p_str,
+                                     int         strlen,
+                                     void       *p_data);
 
 /**
  ** @brief Generates a keytree from a word list.

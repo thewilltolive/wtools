@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "bkv.h"
+#include "bkv_dico.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -27,7 +28,8 @@ extern "C"
 typedef struct bkv_from_json_parser_s *bkv_from_json_parser_t;
 typedef struct bkv_to_json_parser_s   *bkv_to_json_parser_t;
 
-bkv_error_t bkv_from_json(bkv_from_json_parser_t p,
+bkv_error_t bkv_from_json(bkv_dico_type_t dico_type,
+                          bkv_from_json_parser_t p,
                           uint8_t *ptr,
                           int      len,
                           bkv_t   *h);

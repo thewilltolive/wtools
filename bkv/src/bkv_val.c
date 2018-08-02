@@ -63,13 +63,11 @@ val_foreach(bkv_val_t           *v,
     l_ptr=l_base;
 
     do {
-        l_ret=BKV_OK;
         l_hdr_type = (l_ptr[0] >> 4) & 0xF;
         l_key = ((l_ptr[0] & 0xF) << 8) + ( l_ptr[1] & 0xFF);
 
         switch(l_hdr_type){
         case HDR_TYPE_MAP_OPEN:
-            l_ret=p_callbacks->map_open(p_data,l_ptr,l_key);
             if (0 != (l_ret & BKV_PARSE_ACTION_GOTO_END_MAP)){
                 l_map_length=((l_ptr[2] & 0xFF) << 8) + ( l_ptr[3] & 0xFF);
                 if (0 == l_map_length){
@@ -79,9 +77,20 @@ val_foreach(bkv_val_t           *v,
                 l_ptr+=l_map_length;
             }
             else {
-                l_ctx.map_deep++;
-                l_ptr+=HDR_SIZE;
-                l_ptr+=MAP_OPEN_VALUE_SIZE;
+                l_ret=p_callbacks->map_open(p_data,l_ptr,l_key);
+                if (0 != (l_ret & BKV_PARSE_ACTION_GOTO_END_MAP)){
+                    l_map_length=((l_ptr[2] & 0xFF) << 8) + ( l_ptr[3] & 0xFF);
+                    if (0 == l_map_length){
+                        printf("Invalid bkv: map not closed\n");
+                        return(BKV_INV_ARG);
+                    }
+                    l_ptr+=l_map_length;
+                }
+                else {
+                    l_ctx.map_deep++;
+                    l_ptr+=HDR_SIZE;
+                    l_ptr+=MAP_OPEN_VALUE_SIZE;
+                }
             }
             l_ctx.state=BKV_CTX_STATE_IN_MAP;
             break;

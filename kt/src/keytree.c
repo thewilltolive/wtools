@@ -19,6 +19,71 @@ static uint8_t word_type(const char c)
     return(0);
 }
 
+static w_error_t keytree_foreach(keytree_head_t *k,
+                                 wg_keytree_fn_t fn,
+                                 char           *p_str,
+                                 int             strlen,
+                                 void           *p_data){
+    uint32_t        l_i;
+    int             l_found,l_nb_keys;
+    wg_key_t       *l_key;
+
+
+    l_found=0;
+    l_nb_keys=k->lower_case_char.nb_keys;
+    for(l_i=0;l_i<26&&l_found<l_nb_keys;l_i++){
+        l_key=k->lower_case_char.keys[l_i];
+        if (NULL == l_key){
+            continue;
+        }
+        l_found++;
+        p_str[strlen]='a'+l_i;
+        fn(l_key,&p_str[0],strlen+1,p_data);
+        keytree_foreach(&l_key->u.head,
+                        fn,&p_str[0],strlen+1,p_data);
+    }
+    l_found=0;
+    l_nb_keys=k->upper_case_char.nb_keys;
+    for(l_i=0;l_i<26&&l_found<l_nb_keys;l_i++){
+        l_key=k->upper_case_char.keys[l_i];
+        if (NULL == l_key){
+            continue;
+        }
+        l_found++;
+        p_str[strlen]='A'+l_i;
+        fn(l_key,&p_str[0],strlen+1,p_data);
+        keytree_foreach(&l_key->u.head,
+                        fn,&p_str[0],strlen+1,p_data);
+    }
+    l_found=0;
+    l_nb_keys=k->number_char.nb_keys;
+    for(l_i=0;l_i<10&&l_found<l_nb_keys;l_i++){
+        l_key=k->number_char.keys[l_i];
+        if (NULL == l_key){
+            continue;
+        }
+        l_found++;
+        p_str[strlen]='0'+l_i;
+        fn(l_key,&p_str[0],strlen+1,p_data);
+        keytree_foreach(&l_key->u.head,
+                        fn,&p_str[0],strlen+1,p_data);
+    }
+    l_found=0;
+    l_nb_keys=k->other_char.nb_keys;
+    for(l_i=0;l_i<k->other_char.nb_keys;l_i++){
+        l_key=k->other_char.keys[l_i];
+        if (NULL == l_key){
+            continue;
+        }
+        l_found++;
+        p_str[strlen]='a'+l_i;
+        fn(l_key,&p_str[0],strlen+1,p_data);
+        keytree_foreach(&l_key->u.head,
+                        fn,&p_str[0],strlen+1,p_data);
+    }
+    return(W_NO_ERROR);
+}
+
 static w_error_t wg_key_release(keytree_head_t *key_head)
 {
     int         l_i;
@@ -110,6 +175,7 @@ static w_error_t parse_file_create_key(keytree_elem_t  *elem,
                     }
                     memset(l_key,0,sizeof(*l_key));
                     l_key_head->number_char.keys[l_str[l_iter] - '0'] = l_key;
+                    l_key_head->number_char.nb_keys++;
                 }
                 break;
             case 2: /* upper case */
@@ -134,6 +200,7 @@ static w_error_t parse_file_create_key(keytree_elem_t  *elem,
                     }
                     memset(l_key,0,sizeof(*l_key));
                     l_key_head->upper_case_char.keys[l_str[l_iter] - 'A'] = l_key;
+                    l_key_head->upper_case_char.nb_keys++;
                 }
                 break;
             case 3: /* lower case */
@@ -146,6 +213,7 @@ static w_error_t parse_file_create_key(keytree_elem_t  *elem,
                         goto error;
                     }
                     memset(l_key_head->lower_case_char.keys,0,sizeof(wg_key_t*)*26);
+                    l_key_head->lower_case_char.nb_keys++;
                 }
                 l_key = l_key_head->lower_case_char.keys[l_str[l_iter] - 'a'];
                 if (l_key == NULL)
@@ -182,6 +250,7 @@ static w_error_t parse_file_create_key(keytree_elem_t  *elem,
                     }
                     memset(l_key,0,sizeof(*l_key));
                     l_key_head->other_char.keys[l_str[l_iter] - '!'] = l_key;
+                    l_key_head->other_char.nb_keys++;
                 }
                 break;
             default:
@@ -191,7 +260,7 @@ static w_error_t parse_file_create_key(keytree_elem_t  *elem,
         l_key_head = &l_key->u.head ;
     }
     l_key->end_of_word = true;
-    l_key->udata=elem;
+    l_key->udata=elem->d;
     return(W_NO_ERROR);
 error :
     wg_key_release(key_head);
@@ -211,10 +280,12 @@ w_error_t wg_keytree_create(keytree_list_t  *wordlist,
     if ((NULL == wordlist) || (NULL == key_head)){
         return(W_E_BAD_PARAMETER);
     }
+#if 0
     if (0 == wordlist->nb_elems)
     {
         return(W_E_BAD_PARAMETER);
     }
+#endif
     if ((l_key_head = malloc(sizeof(*l_key_head))) == NULL)
     {
         printf("Failed to allocate %d bytes\n",sizeof(*l_key_head));
@@ -240,9 +311,7 @@ w_error_t wg_keytree_create(keytree_list_t  *wordlist,
 
 w_error_t wg_keytree_add(keytree_head_t *head,
                          keytree_elem_t *e){
-    (void)head;
-    (void)e;
-    return(W_NO_ERROR);
+    return(parse_file_create_key(e,head));
 }
 
 static wg_key_t *keytree_keyget(keytree_head_t  *key_head,
@@ -409,12 +478,19 @@ int wg_keytree_strcmp_isalnum(keytree_head_t  *key_head,
     return(l_error);
 }
 
+
+
 w_error_t wg_keytree_foreach(keytree_head_t  *key_head,
                              wg_keytree_fn_t  fn,
                              void            *p_data){
+
+    char str[128];
+    return(keytree_foreach(key_head,fn,&str[0],0,p_data));
 }
 
 w_error_t wg_keytree_destroy(keytree_head_t *key_head){
+    (void)key_head;
+    return(W_NO_ERROR);
 }
 
 w_error_t wg_keytree_keyget(keytree_head_t  *key_head,

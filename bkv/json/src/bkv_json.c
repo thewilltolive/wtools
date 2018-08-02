@@ -8,10 +8,11 @@
 
 
 bkv_error_t
-bkv_from_json(bkv_from_json_parser_t p,
-                  uint8_t *ptr,
-                  int      len,
-                  bkv_t   *h){
+bkv_from_json(bkv_dico_type_t         dico_type,
+              bkv_from_json_parser_t  p,
+              uint8_t                *ptr,
+              int                     len,
+              bkv_t                  *h){
     bkv_from_json_ctx_t l_ctx=BKV_FROM_JSON_CTX_INIT;
     bkv_create_t        l_bkv_create=BKV_CREATE_INIT;
 #ifdef HAS_DICO
@@ -25,11 +26,7 @@ bkv_from_json(bkv_from_json_parser_t p,
     }
 
 #ifdef HAS_DICO
-#ifdef BKV_CACHED_DICO
-    l_bkv_dico_create.type=BKV_DICO_TYPE_CACHED;
-#else
-    l_bkv_dico_create.type=BKV_DICO_TYPE_DIRECT;
-#endif
+    l_bkv_dico_create.type=dico_type;
     if (BKV_OK != (l_error = bkv_dico_create(&l_bkv_dico_create,&l_ctx.dico_handle))){
         return(l_error);
     }

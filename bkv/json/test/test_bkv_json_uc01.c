@@ -17,7 +17,7 @@ static int clean_suite(void){
     return 0;
 }
 
-static void test_bkv_json_to_bkv(void){
+static void test_bkv_json_to_bkv_direct(void){
     bkv_from_json_parser_t  from=bkv_from_json_yajl_parser_get();
     bkv_to_json_parser_t    to=bkv_to_json_yajl_parser_get();
     const char*             str1="{ \"init\" : 0 }";
@@ -29,15 +29,53 @@ static void test_bkv_json_to_bkv(void){
     uint8_t                *l_str;
     int                     l_str_len;
 
-    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(from,(uint8_t*)str1,strlen(str1),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_DIRECT,
+                                               from,(uint8_t*)str1,
+                                               strlen(str1),&h));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str1,strlen(str1),(const uint8_t*)out_str,out_str_len));
 
-    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(from,(uint8_t*)str2,strlen(str2),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_DIRECT,
+                                               from,(uint8_t*)str2,strlen(str2),&h));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str2,strlen(str2),(const uint8_t *)out_str,out_str_len));
 
-    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(from,(uint8_t*)str3,strlen(str3),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_DIRECT,
+                                               from,(uint8_t*)str3,strlen(str3),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str3,strlen(str3),(const uint8_t*)out_str,out_str_len));
+    bkv_get_head(h,&l_str,&l_str_len);
+    printf(" LEN %d BKV LEN %d\n",strlen(str3),l_str_len);
+
+    bkv_from_json_yajl_parser_rel(from);
+    bkv_to_json_yajl_parser_rel(to);
+}
+
+static void test_bkv_json_to_bkv_cached(void){
+    bkv_from_json_parser_t  from=bkv_from_json_yajl_parser_get();
+    bkv_to_json_parser_t    to=bkv_to_json_yajl_parser_get();
+    const char*             str1="{ \"init\" : 0 }";
+    const char*             str2="{ \"v1\" : \"string\", \"v2\" : 3}";
+    const char*             str3="{ \"v1\" : \"string\", \"v2\" : { \"v3\" : 3, \"v4\" : \"str\" } }";
+    bkv_t                   h;
+    uint8_t                *out_str;
+    int                     out_str_len;
+    uint8_t                *l_str;
+    int                     l_str_len;
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
+                                               from,(uint8_t*)str1,
+                                               strlen(str1),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str1,strlen(str1),(const uint8_t*)out_str,out_str_len));
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
+                                               from,(uint8_t*)str2,strlen(str2),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str2,strlen(str2),(const uint8_t *)out_str,out_str_len));
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
+                                               from,(uint8_t*)str3,strlen(str3),&h));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str3,strlen(str3),(const uint8_t*)out_str,out_str_len));
     bkv_get_head(h,&l_str,&l_str_len);
@@ -158,7 +196,8 @@ static void test_bkv_json_to_bkv_random(void){
 
     test_bkv_create_json(3,0,NULL,&l_str,&l_str_len);
     printf(" IN %.*s\n",l_str_len,l_str);
-    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(from,(uint8_t*)l_str,l_str_len,&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_DIRECT,
+                                               from,(uint8_t*)l_str,l_str_len,&h));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&l_out_str,&l_out_str_len));
     printf("OUT %.*s\n",l_out_str_len,l_out_str);
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)l_str,l_str_len,(const uint8_t*)l_out_str,l_out_str_len));
@@ -179,7 +218,8 @@ static void test_bkv_json_to_bkv_float_array_random(void){
 
     test_bkv_create_json(3,5,test_bkv_get_array_elem_float,&l_str,&l_str_len);
     printf(" IN %.*s\n",l_str_len,l_str);
-    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(from,(uint8_t*)l_str,l_str_len,&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_DIRECT,
+                                               from,(uint8_t*)l_str,l_str_len,&h));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&l_out_str,&l_out_str_len));
     printf("OUT json_len %d bkv_len %d %.*s\n",l_str_len,bkv_size(h),l_out_str_len,l_out_str);
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)l_str,l_str_len,(const uint8_t*)l_out_str,l_out_str_len));
@@ -211,7 +251,12 @@ int main(int argc, char **argv)
     }
 
     /* add the tests to the suite */
-    if (NULL == CU_add_test(pSuite, "test_bkv_to_json", test_bkv_json_to_bkv)) {
+    if (NULL == CU_add_test(pSuite, "test_bkv_to_json direct", test_bkv_json_to_bkv_direct)) {
+        return CU_get_error();
+    }
+
+    /* add the tests to the suite */
+    if (NULL == CU_add_test(pSuite, "test_bkv_to_json cached", test_bkv_json_to_bkv_cached)) {
         return CU_get_error();
     }
 
