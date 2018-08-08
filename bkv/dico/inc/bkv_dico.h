@@ -40,7 +40,7 @@ typedef struct {
 #define BKV_DICO_CREATE_INIT { BKV_DICO_TYPE_END_VALUE, BKV_CREATE_INIT } 
 
 int bkv_dico_create(bkv_dico_create_t *p_dico_create, bkv_dico_t *p_dico_handle);
-int bkv_dico_key_add(bkv_dico_t dico_handle,bkv_key_t key_index, const uint8_t *keystr, int keystrlen);
+int bkv_dico_key_add(bkv_dico_t dico_handle,bkv_key_t key_index, bkv_key_t *p_final_key, const uint8_t *keystr, int keystrlen);
 int bkv_dico_destroy(bkv_dico_t dico_handle, bkv_t *p_bkv_dico_handle);
 
 

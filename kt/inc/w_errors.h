@@ -36,7 +36,8 @@ typedef enum
     W_E_OPERATION_FAILED,
     W_E_AGAIN,
     W_E_NO_MEMORY,
-    W_E_BAD_PARAMETER
+    W_E_BAD_PARAMETER,
+    W_E_EXISTS
 
 }w_error_t;
 

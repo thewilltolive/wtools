@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -9,12 +10,45 @@
 #include "bkv_json_tools.h"
 #include "bkv_json_yajl.h"
 
+#define TEST_NAME() printf("Start Test:%s:\n",__FUNCTION__)
+
 static int init_suite(void){
     return 0;
 }
 
 static int clean_suite(void){
     return 0;
+}
+
+static bool test_is_valid_json(const uint8_t *str,
+                               int            strlen){
+    bool                     l_ret=false;
+    yajl_handle              l_yajl_handle;
+    yajl_status              l_status;
+    yajl_callbacks           callbacks = {
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    };
+
+
+    if ((l_yajl_handle = yajl_alloc(&callbacks, NULL, NULL)) == NULL) {
+    }
+    if ((l_status = yajl_parse(l_yajl_handle, str, strlen)) != yajl_status_ok) {
+    }
+    else {
+        l_ret=true;
+    }
+    yajl_free(l_yajl_handle);
+    return(l_ret);
 }
 
 static void test_bkv_json_to_bkv_direct(void){
@@ -195,8 +229,33 @@ static void test_bkv_json_to_bkv_random(void){
     int                     l_str_len,l_out_str_len;
 
     test_bkv_create_json(3,0,NULL,&l_str,&l_str_len);
+    CU_ASSERT_EQUAL_FATAL(true,test_is_valid_json(l_str,l_str_len));
     printf(" IN %.*s\n",l_str_len,l_str);
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_DIRECT,
+                                               from,(uint8_t*)l_str,l_str_len,&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&l_out_str,&l_out_str_len));
+    printf("OUT %.*s\n",l_out_str_len,l_out_str);
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)l_str,l_str_len,(const uint8_t*)l_out_str,l_out_str_len));
+
+    bkv_from_json_yajl_parser_rel(from);
+    bkv_to_json_yajl_parser_rel(to);
+    bkv_destroy(h);
+    free(l_str);
+    free(l_out_str);
+}
+
+static void test_bkv_json_to_bkv_random_cached(void){
+    bkv_from_json_parser_t  from=bkv_from_json_yajl_parser_get();
+    bkv_to_json_parser_t    to=bkv_to_json_yajl_parser_get();
+    bkv_t                   h;
+    uint8_t                *l_str,*l_out_str;
+    int                     l_str_len,l_out_str_len;
+
+    TEST_NAME();
+
+    test_bkv_create_json(3,0,NULL,&l_str,&l_str_len);
+    printf(" IN %.*s\n",l_str_len,l_str);
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
                                                from,(uint8_t*)l_str,l_str_len,&h));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&l_out_str,&l_out_str_len));
     printf("OUT %.*s\n",l_out_str_len,l_out_str);
@@ -262,6 +321,11 @@ int main(int argc, char **argv)
 
     /* add the tests to the suite */
     if (NULL == CU_add_test(pSuite, "test_bkv_to_json_random", test_bkv_json_to_bkv_random)) {
+        return CU_get_error();
+    }
+
+    /* add the tests to the suite */
+    if (NULL == CU_add_test(pSuite, "test_bkv_to_json_random cached", test_bkv_json_to_bkv_random_cached)) {
         return CU_get_error();
     }
 

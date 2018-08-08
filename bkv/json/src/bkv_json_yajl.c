@@ -10,7 +10,8 @@
 #include "json_plugs.h"
 
 typedef struct {
-    int16_t key_index;
+    bkv_key_t key_index;
+    bkv_key_t existing_key_index;
 
 } bkv_from_json_yajl_ctx_t;
 
@@ -98,6 +99,7 @@ static int
 bkv_json_get_double(void *ctx, double doubleVal){
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
+    bkv_key_t                 l_index;
     int                       l_ret;
     if (NULL != l_ctx){
         if (l_ctx->in_array){
@@ -106,7 +108,8 @@ bkv_json_get_double(void *ctx, double doubleVal){
             }
         }
         else {
-            if (BKV_OK != (l_ret = bkv_kv_float_add(l_ctx->data_handle,l_yajl_ctx->key_index,doubleVal))){
+            l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
+            if (BKV_OK != (l_ret = bkv_kv_float_add(l_ctx->data_handle,l_index,doubleVal))){
                 printf(" Failed to add array\n");
             }
         }
@@ -119,6 +122,7 @@ static int
 bkv_json_get_number(void *ctx, const char *numberVal, size_t numberLen){
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
+    bkv_key_t                 l_index;
     float                     l_value;
     int                       l_ret;
     (void) numberLen;
@@ -132,7 +136,8 @@ bkv_json_get_number(void *ctx, const char *numberVal, size_t numberLen){
             }
         }
         else {
-            if (BKV_OK != (l_ret = bkv_kv_float_add(l_ctx->data_handle,l_yajl_ctx->key_index,l_value))){
+            l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
+            if (BKV_OK != (l_ret = bkv_kv_float_add(l_ctx->data_handle,l_index,l_value))){
                 printf(" Failed to add array\n");
             }
         }
@@ -148,10 +153,12 @@ bkv_json_get_string(void *ctx,
                     size_t stringLen){
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
+    bkv_key_t                 l_index;
     int                       l_ret;
     (void)ctx;
     if ((NULL != l_ctx) && (NULL != stringVal)){
-        if (-1 == (l_ret = bkv_kv_str_add(l_ctx->data_handle,l_yajl_ctx->key_index,stringVal,stringLen))){
+        l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
+        if (-1 == (l_ret = bkv_kv_str_add(l_ctx->data_handle,l_index,stringVal,stringLen))){
         }
     }
     return (1);
@@ -160,12 +167,14 @@ bkv_json_get_string(void *ctx,
 static int
 bkv_json_start_map(void * ctx){
     int                  l_ret=-1;
+    bkv_key_t            l_index;
     bkv_from_json_ctx_t *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
 
     if (NULL != l_ctx){
         if (0 < l_ctx->deep){
-            if (BKV_OK != (l_ret = bkv_kv_map_open(l_ctx->data_handle,l_yajl_ctx->key_index))){
+            l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
+            if (BKV_OK != (l_ret = bkv_kv_map_open(l_ctx->data_handle,l_index))){
                 printf("Failed to add map with key %d\n",l_yajl_ctx->key_index);
             }
         }
@@ -201,13 +210,15 @@ bkv_json_end_map(void * ctx){
 
 static int
 bkv_json_start_array(void * ctx){
-    int                  l_ret=-1;
-    bkv_from_json_ctx_t *l_ctx = (bkv_from_json_ctx_t *) ctx;
+    int                       l_ret=-1;
+    bkv_key_t                 l_index;
+    bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
 
     if (NULL != l_ctx){
         if (0 < l_ctx->deep){
-            if (BKV_OK != (l_ret = bkv_kv_array_open(l_ctx->data_handle,l_yajl_ctx->key_index))){
+            l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
+            if (BKV_OK != (l_ret = bkv_kv_array_open(l_ctx->data_handle,l_index))){
                 printf("Failed to add array with key %d\n",l_yajl_ctx->key_index);
             }
         }
@@ -248,6 +259,7 @@ bkv_json_end_array(void * ctx){
 static int
 bkv_json_map_keys(void *ctx, const unsigned char *key, size_t keylen){
     bkv_error_t l_ret=BKV_INV_ARG;
+    bkv_key_t   l_returned_index=BKV_NO_KEY;
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
     if (NULL != l_ctx){
@@ -258,9 +270,18 @@ bkv_json_map_keys(void *ctx, const unsigned char *key, size_t keylen){
 #else
         if (BKV_OK != (l_ret=bkv_dico_key_add(l_ctx->dico_handle,
                                               ++l_yajl_ctx->key_index,
+                                              &l_returned_index,
                                               key,
                                               keylen))){
             return(l_ret);
+        }
+        else {
+            if (l_returned_index != BKV_NO_KEY){
+                l_yajl_ctx->existing_key_index=l_returned_index;
+            }
+            else {
+                l_yajl_ctx->existing_key_index=BKV_NO_KEY;
+            }
         }
 #endif
     }
