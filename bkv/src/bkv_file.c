@@ -11,7 +11,7 @@
 static const char *s_file="bkv_file.c";
 
 int bkv_file_truncate(int fd, int new_size, uint8_t **pp_ptr){
-    int      l_ret=-1;
+    int      l_ret=BKV_INV_ARG;
     uint8_t *l_ptr;
 #ifdef __USE_XOPEN_EXTENDED
     if (-1 == (l_ret = truncate(fd,new_size))){
@@ -28,20 +28,20 @@ int bkv_file_truncate(int fd, int new_size, uint8_t **pp_ptr){
     }
     else {
         *pp_ptr = l_ptr;
-        l_ret=0;
+        l_ret=BKV_OK;
     }
     return(l_ret);
 }
 
 
 
-int bkv_open_file_create_write(const char      *p_file,
-                               int              mode,
-                               int             *p_fd,
-                               int             *p_size,
-                               uint8_t        **p_ptr){
+bkv_error_t bkv_open_file_create_write(const char      *p_file,
+                                       int              mode,
+                                       int             *p_fd,
+                                       int             *p_size,
+                                       uint8_t        **p_ptr){
     int          l_fd;
-    int          l_ret;
+    int          l_ret=BKV_INV_ARG;
     if (-1 == (l_fd = open(p_file,O_CREAT|O_TRUNC|O_RDWR,mode))){
         bkv_print(s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
     }
@@ -49,9 +49,9 @@ int bkv_open_file_create_write(const char      *p_file,
         *p_fd=l_fd;
         *p_size=0;
         *p_ptr=NULL;
-        l_ret=0;
+        l_ret=BKV_OK;
     }
-    if (-1 == l_ret){
+    if (BKV_OK != l_ret){
         if (-1 != l_fd){
              close(l_fd);
         }
@@ -59,18 +59,18 @@ int bkv_open_file_create_write(const char      *p_file,
     return(l_ret);
 }
 
-int bkv_open_file_readonly(const char      *p_file,
-                           int             *p_fd,
-                           int             *p_size,
-                           uint8_t        **p_ptr){
+bkv_error_t bkv_open_file_readonly(const char      *p_file,
+                                   int             *p_fd,
+                                   int             *p_size,
+                                   uint8_t        **p_ptr){
     int          l_fd;
     struct stat  l_statbuf;
-    int          l_ret=-1;
+    int          l_ret=BKV_INV_ARG;
     uint8_t     *l_ptr;
     if (-1 == (l_fd = open(p_file,O_RDONLY))){
         bkv_print(s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
     }
-    else if (-1 == (l_ret = fstat(l_fd,&l_statbuf))){
+    else if (-1 == fstat(l_fd,&l_statbuf)){
     }
     else if (MAP_FAILED == (l_ptr = mmap(NULL,l_statbuf.st_size,PROT_READ,MAP_SHARED,l_fd,0))){
     }
@@ -78,7 +78,7 @@ int bkv_open_file_readonly(const char      *p_file,
         *p_fd=l_fd;
         *p_size=l_statbuf.st_size;
         *p_ptr=l_ptr;
-        l_ret=0;
+        l_ret=BKV_OK;
     }
     if (-1 == l_ret){
         if (-1 != l_fd){

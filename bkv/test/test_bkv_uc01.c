@@ -18,9 +18,9 @@ static int clean_suite(void)
 
 static void test_bkv_init_term(void){
     bkv_init_t bkv;
-    CU_ASSERT_NOT_EQUAL(0,bkv_init(NULL));
-    CU_ASSERT_EQUAL(0,bkv_init(&bkv));
-    CU_ASSERT_EQUAL(0,bkv_term());
+    CU_ASSERT_NOT_EQUAL(BKV_OK,bkv_init(NULL));
+    CU_ASSERT_EQUAL(BKV_OK,bkv_init(&bkv));
+    CU_ASSERT_EQUAL(BKV_OK,bkv_term());
 }
 
 static void test_bkv_u16(void){
@@ -35,17 +35,17 @@ static void test_bkv_u16(void){
     int16_t      l_key=TEST_KEY;
     uint16_t     l_value=32;
     uint16_t     l_keys[2] = { TEST_KEY, BKV_KEY_INVALID };
-    CU_ASSERT_EQUAL_FATAL(0,bkv_init(&l_init));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
     l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
     l_bkv_create.filename="test_file.db";
     l_bkv_create.mode=0777;
-    CU_ASSERT_EQUAL_FATAL(0,bkv_create(&l_bkv_create,&l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_open(l_handle,BKV_NO_KEY));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_u16_add(l_handle,l_key,l_value));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_close(l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_init(&l_val,l_ptr));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_create(&l_bkv_create,&l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_open(l_handle,BKV_NO_KEY));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_u16_add(l_handle,l_key,l_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
     CU_ASSERT_EQUAL(l_out_value.u.number.int16,l_value);
     bkv_destroy(l_handle);
     bkv_term();
@@ -64,17 +64,17 @@ static void test_bkv_str(void){
     const char  *l_value="the test content";
     uint16_t     l_keys[2] = { TEST_KEY, BKV_KEY_INVALID };
 
-    CU_ASSERT_EQUAL_FATAL(0,bkv_init(&l_init));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
     l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
     l_bkv_create.filename="test_file.db";
     l_bkv_create.mode=0777;
-    CU_ASSERT_EQUAL_FATAL(0,bkv_create(&l_bkv_create,&l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_open(l_handle,BKV_NO_KEY));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_str_add(l_handle,l_key,(const uint8_t*)l_value,strlen(l_value)));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_close(l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_init(&l_val,l_ptr));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_create(&l_bkv_create,&l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_open(l_handle,BKV_NO_KEY));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_str_add(l_handle,l_key,(const uint8_t*)l_value,strlen(l_value)));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
     CU_ASSERT_PTR_NOT_EQUAL(NULL,l_out_value.u.string.str);
     CU_ASSERT_NOT_EQUAL(0,l_out_value.u.string.len);
     if ((l_out_value.u.string.str != NULL)&&(l_out_value.u.string.len>0)){
@@ -101,21 +101,21 @@ static void test_bkv_float_multi(void){
     float        l_value=7.535434;
     uint16_t     l_keys[2] = { FLOAT_TEST_KEY, BKV_KEY_INVALID };
 
-    CU_ASSERT_EQUAL_FATAL(0,bkv_init(&l_init));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
     l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
     l_bkv_create.filename="test_file.db";
     l_bkv_create.mode=0777;
-    CU_ASSERT_EQUAL_FATAL(0,bkv_create(&l_bkv_create,&l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_open(l_handle,BKV_NO_KEY));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_create(&l_bkv_create,&l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_open(l_handle,BKV_NO_KEY));
     for (i=0;i<10;i++){
-        CU_ASSERT_EQUAL_FATAL(0,bkv_kv_float_add(l_handle,l_key+i,l_value+i));
+        CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_float_add(l_handle,l_key+i,l_value+i));
     }
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_close(l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_init(&l_val,l_ptr));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
     for(i=0;i<10;i++){
         l_keys[0]=(uint16_t)(l_key+i);
-        CU_ASSERT_EQUAL_FATAL(0,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
+        CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
         CU_ASSERT_TRUE((l_out_value.u.number.f - (l_value+i)) < 0.1);
     }
     bkv_destroy(l_handle);
@@ -135,17 +135,17 @@ static void test_bkv_float(void){
     float        l_value=7.535434;
     uint16_t     l_keys[2] = { FLOAT_TEST_KEY, BKV_KEY_INVALID };
 
-    CU_ASSERT_EQUAL_FATAL(0,bkv_init(&l_init));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
     l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
     l_bkv_create.filename="test_file.db";
     l_bkv_create.mode=0777;
-    CU_ASSERT_EQUAL_FATAL(0,bkv_create(&l_bkv_create,&l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_open(l_handle,BKV_NO_KEY));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_float_add(l_handle,l_key,l_value));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_kv_map_close(l_handle));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_init(&l_val,l_ptr));
-    CU_ASSERT_EQUAL_FATAL(0,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_create(&l_bkv_create,&l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_open(l_handle,BKV_NO_KEY));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_float_add(l_handle,l_key,l_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
     CU_ASSERT_TRUE((l_out_value.u.number.f - l_value) < 0.1);
     bkv_destroy(l_handle);
     bkv_term();
@@ -164,7 +164,7 @@ static void test_bkv_array(void){
     bkv_val_t    l_val=BKV_VAL_INIT;
     bkv_val_t    l_out_value[3]={BKV_VAL_INIT,BKV_VAL_INIT,BKV_VAL_INIT};
 
-    CU_ASSERT_EQUAL_FATAL(0,bkv_init(&l_init));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
     l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
     l_bkv_create.filename="test_file.db";
     l_bkv_create.mode=0777;

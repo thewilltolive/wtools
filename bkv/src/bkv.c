@@ -32,6 +32,7 @@ typedef enum {
     OPEN_ARRAY,
     CLOSE_ARRAY,
     ADD_ARRAY_FLOAT,
+    ADD_ARRAY_U16,
     SET_KEY,
     SET_VALUE
 } action_t;
@@ -64,7 +65,7 @@ int bkv_size(bkv_t h){
 }
 
 int bkv_init(bkv_init_t *i){
-    int l_ret=-1;
+    int l_ret=BKV_INV_STATE;
     if (NULL == i){
         return(l_ret);
     }
@@ -73,7 +74,7 @@ int bkv_init(bkv_init_t *i){
     if (s_init == 0){
         s_init ++;
         pthread_mutex_unlock(&s_mutex);
-        l_ret=0;
+        l_ret=BKV_OK;
     }
     else {
         pthread_mutex_unlock(&s_mutex);
@@ -82,12 +83,12 @@ int bkv_init(bkv_init_t *i){
 }
 
 int bkv_term(void){
-    int l_ret=-1;
+    int l_ret=BKV_INV_STATE;
     pthread_mutex_lock(&s_mutex);
     if (s_init > 0){
         s_init=0;
         pthread_mutex_unlock(&s_mutex);
-        l_ret=0;
+        l_ret=BKV_OK;
     }
     else{
         pthread_mutex_unlock(&s_mutex);
@@ -112,7 +113,7 @@ static int bkv_check_state(state_t s, char t, action_t a){
     case STATE_KEY_SET:
         break;
     case STATE_IN_ARRAY:
-        if ((a == ADD_ARRAY_FLOAT) || (a == CLOSE_ARRAY)){
+        if ((a == ADD_ARRAY_FLOAT) || (a == ADD_ARRAY_U16) || (a == CLOSE_ARRAY)){
             l_ret=0;
         }
         break;
@@ -201,9 +202,13 @@ int bkv_destroy(bkv_t handle){
 int bkv_get_head(bkv_t h, 
                  uint8_t **p_str,
                  int      *p_strlen){
+    if ((NULL == h) || (NULL == p_str)||(NULL == p_strlen)){
+        return(BKV_INV_ARG);
+    }
+    /* @TODO forbid get_head when final map has not been closed. */
     *p_str=h->ptr;
     *p_strlen=h->write_offset;
-    return(0);
+    return(BKV_OK);
 }
 
 static int bkv_prepare(bkv_t h, int size_in_bits){
@@ -404,6 +409,22 @@ int bkv_kv_array_float_add(bkv_t h, float f){
     }
     set_key(HDR_TYPE_FLOAT,BKV_ARRAY_KEY,&h->ptr[h->write_offset],&h->write_offset);
     cpu_to_lef(f,&h->ptr[h->write_offset],&h->write_offset);
+    h->array_nb_elems[h->deep_offset] ++;
+    return(l_ret);
+}
+
+int bkv_kv_array_u16_add(bkv_t h, uint16_t u){
+    int l_ret=BKV_OK;
+    BKV_FCT_INIT(bkv_kv_map_open);
+    BKV_HDL(h);
+    if (-1 == bkv_check_state(h->state,(-1==h->deep_offset)?-1:h->deep_value[h->deep_offset],ADD_ARRAY_U16)){
+        return(BKV_HDL_INV);
+    }
+    if (-1 == bkv_prepare(h,16)){
+        return(BKV_INV_STATE);
+    }
+    set_key(HDR_TYPE_INT16,BKV_ARRAY_KEY,&h->ptr[h->write_offset],&h->write_offset);
+    cpu_to_le16(u,&h->ptr[h->write_offset],&h->write_offset);
     h->array_nb_elems[h->deep_offset] ++;
     return(l_ret);
 }

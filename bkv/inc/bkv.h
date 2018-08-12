@@ -112,7 +112,7 @@ int bkv_kv_map_close(bkv_t h);
 int bkv_kv_array_open(bkv_t h, bkv_key_t key);
 int bkv_kv_array_close(bkv_t h);
 int bkv_kv_array_float_add(bkv_t h, float f);
-
+int bkv_kv_array_u16_add(bkv_t h, uint16_t u);
 #ifdef __cplusplus
 }
 #endif

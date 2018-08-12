@@ -8,7 +8,7 @@
 
 
 int bkv_val_init(bkv_val_t *p_val, uint8_t *p_ptr){
-    int      l_ret=-1;
+    int      l_ret=BKV_INV_ARG;
     int      l_type;
 
     l_type = (p_ptr[0] >> 4) & 0xF;
@@ -16,18 +16,20 @@ int bkv_val_init(bkv_val_t *p_val, uint8_t *p_ptr){
     switch(l_type){
     case HDR_TYPE_MAP_OPEN:
         p_val->type=BKV_VAL_TYPE_OBJECT;
-        l_ret=0;
+        l_ret=BKV_OK;
         break;
     case HDR_TYPE_MAP_CLOSE:
         break;
     case HDR_TYPE_ARRAY_OPEN:
+        p_val->type=BKV_VAL_TYPE_ARRAY;
+        l_ret=BKV_OK;
         break;
     case HDR_TYPE_ARRAY_CLOSE:
         break;
     case HDR_TYPE_INT16:
         p_val->type=BKV_VAL_TYPE_NUMBER;
         le16_to_cpu(&p_ptr[HDR_SIZE],&p_val->u.number.int16,NULL);
-        l_ret=0;
+        l_ret=BKV_OK;
         break;
     case HDR_TYPE_INT32:
         break;
@@ -52,12 +54,11 @@ val_foreach(bkv_val_t           *v,
             bkv_val_callbacks_t *p_callbacks,
             void                *p_data){
     int                l_ret=0, l_strlen;
-    uint8_t           *l_base=v->priv,*l_ptr;
+    uint8_t           *l_base=v->priv,*l_ptr,*l_save_ptr;
     int16_t            l_key;
     uint16_t           l_value,l_map_length,l_array_nb_elems;
     header_type_t      l_hdr_type;
     bkv_ctx_t          l_ctx= BKV_CTX_INIT;
-    bool               l_continue=true;
     float              l_float;
 
     l_ptr=l_base;
@@ -65,6 +66,7 @@ val_foreach(bkv_val_t           *v,
     do {
         l_hdr_type = (l_ptr[0] >> 4) & 0xF;
         l_key = ((l_ptr[0] & 0xF) << 8) + ( l_ptr[1] & 0xFF);
+        l_save_ptr=l_ptr;
 
         switch(l_hdr_type){
         case HDR_TYPE_MAP_OPEN:
@@ -106,7 +108,7 @@ val_foreach(bkv_val_t           *v,
             l_ptr+=HDR_SIZE;
             l_ptr+=2;
             le16_to_cpu(l_ptr,&l_array_nb_elems,NULL);
-            l_ret=p_callbacks->array_open(p_data, l_ptr, l_array_nb_elems, l_key);
+            l_ret=p_callbacks->array_open(p_data, l_save_ptr, l_array_nb_elems, l_key);
             l_ptr+=2;
             l_ctx.state=BKV_CTX_STATE_IN_ARRAY;
             break;
@@ -118,7 +120,7 @@ val_foreach(bkv_val_t           *v,
         case HDR_TYPE_INT16:
             l_ptr+=HDR_SIZE;
             le16_to_cpu(l_ptr,&l_value,NULL);
-            l_continue=p_callbacks->uint16(p_data,l_ptr,l_key, l_value);
+            l_ret=p_callbacks->uint16(p_data,l_ptr,l_key, l_value);
             l_ptr+=sizeof(int16_t);
             break;
         case HDR_TYPE_KEY:
@@ -150,8 +152,7 @@ val_foreach(bkv_val_t           *v,
 
         }
     } while((0 == (l_ret & BKV_PARSE_ACTION_STOP_LOOP)) && 
-            ((int)((int)l_ptr - (int)l_base) > 0) && 
-            (true==l_continue));
+            ((int)((int)l_ptr - (int)l_base) > 0));
 
     return(BKV_OK);
 }
@@ -173,8 +174,23 @@ static bkv_parse_retval_t  bkv_val_get_map_open(void *p_data, uint8_t *p_ptr, bk
     bkv_val_get_ctx_t        *l_ctx=p_data;
     (void)p_data;
     (void)key;
+    /* do nothing on first map. */
+    if (BKV_NO_KEY == key){
+        l_ctx->key_offset++;
+        return(BKV_PARSE_ACTION_NONE);
+    }
+
     if (NULL == l_ctx){
         return(-1);
+    }
+    if (key == l_ctx->keys[l_ctx->key_offset]){
+        if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
+            l_ctx->got_it=true;
+        }
+        l_ctx->key_offset++;
+    }
+    else {
+        l_ret=BKV_PARSE_ACTION_GOTO_END_MAP;
     }
     if (true == l_ctx->got_it){
         l_ctx->val->type=BKV_VAL_TYPE_OBJECT;
@@ -188,7 +204,7 @@ static bkv_parse_retval_t  bkv_val_get_map_open(void *p_data, uint8_t *p_ptr, bk
 }
 static bkv_parse_retval_t
 bkv_val_get_map_close(void *p_data, bkv_key_t key){
-    bool l_ret=BKV_PARSE_ACTION_NONE;
+    bkv_parse_retval_t l_ret=BKV_PARSE_ACTION_NONE;
     (void)p_data;
     (void)key;
     return(l_ret);
@@ -204,27 +220,43 @@ bkv_val_get_map_key(void *p_data, bkv_key_t key){
         if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
             l_ctx->got_it=true;
         }
+        l_ctx->key_offset++;
+    }
+    else {
+        l_ret=BKV_PARSE_ACTION_GOTO_END_MAP;
     }
     return(l_ret);
 }
 
-static bool
+static bkv_parse_retval_t
 bkv_val_get_uint16(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value){
     bkv_val_get_ctx_t        *l_ctx=p_data;
-    bool                      l_continue=true;
+    bkv_parse_retval_t        l_ret=BKV_PARSE_ACTION_NONE;
     (void)p_data;
     (void)p_ptr;
     (void)value;
     (void)key;
-    if (key == l_ctx->keys[l_ctx->key_offset]){
+    if (NULL == l_ctx->keys){
+        l_ctx->val[l_ctx->val_offset].type=BKV_VAL_TYPE_INT16;
+        l_ctx->val[l_ctx->val_offset].u.number.int16=value;
+        l_ctx->val_is_set=true;
+        if ((l_ctx->val_offset +1) >= l_ctx->nb_val){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        l_ctx->val_offset++;
+    }
+    else if (key == l_ctx->keys[l_ctx->key_offset]){
         if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
             l_ctx->val->type=BKV_VAL_TYPE_INT16;
             l_ctx->val->u.number.int16=value;
             l_ctx->val_is_set=true;
-            l_continue=false;
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        else {
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
         }
     }
-    return(l_continue);
+    return(l_ret);
 }
 
 static bkv_parse_retval_t
@@ -274,14 +306,18 @@ bkv_val_get_float(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f){
 static bkv_parse_retval_t
 bkv_val_get_array_open(void *p_data, uint8_t *p_ptr, int array_len, bkv_key_t key){
     bkv_val_get_ctx_t  *l_ctx=p_data;
-    int                 l_ret=0;
+    int                 l_ret=BKV_PARSE_ACTION_NONE;
     (void)p_ptr;
-    if (key == l_ctx->keys[l_ctx->key_offset]){
+    if (NULL == l_ctx->keys){
+        /* look for array elements. */
+    }
+    else if (key == l_ctx->keys[l_ctx->key_offset]){
         if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
             l_ctx->val->type=BKV_VAL_TYPE_ARRAY;
-            l_ctx->got_it=true;
             l_ctx->val->u.array.len=array_len;
-            l_ctx->val_offset++;
+            l_ctx->val_is_set=true;
+            l_ctx->val->priv=p_ptr;
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
         }
     }
     return(l_ret);
@@ -310,12 +346,22 @@ int bkv_val_get2(bkv_val_t *v,
                  int nb_val,
                  bkv_val_t *p_val){
     int               l_ret=1;
-    bkv_val_get_ctx_t l_ctx = { v, p_keys , nb_val, p_val, 0, false, 0, false};
+    bkv_val_get_ctx_t l_ctx = { v, p_keys , nb_val, p_val, 0, false, -1, false};
+
+    if ((NULL == v)) {
+        return(BKV_INV_ARG);
+    }
+    if ((p_keys == NULL) && (BKV_VAL_TYPE_ARRAY != v->type)){
+        return(BKV_INV_ARG);
+    }
 
     l_ret = val_foreach(v,&s_val_get_callbacks,&l_ctx);
 
     if (true == l_ctx.val_is_set){
         l_ret = BKV_OK;
+    }
+    else {
+        l_ret = BKV_INV_ARG;
     }
 
     return(l_ret);
@@ -325,4 +371,10 @@ int bkv_val_foreach(bkv_val_t           *p_val,
                     bkv_val_callbacks_t *p_callbacks,
                     void                *p_data){
     return(val_foreach(p_val,p_callbacks,p_data));
+}
+
+
+bkv_error_t bkv_val_rel(bkv_val_t *v){
+    (void)v;
+    return(BKV_OK);
 }

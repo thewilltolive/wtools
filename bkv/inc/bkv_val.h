@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <bkv_error.h>
 #include <bkv_types.h>
 
 #ifdef __cplusplus
@@ -97,15 +98,35 @@ typedef struct {
     bkv_parse_retval_t (*array_open)(void *p_data, uint8_t *p_ptr, int array_len, bkv_key_t key);
     bkv_parse_retval_t (*array_close)(void *p_data);
     int (*key)(void *p_data, bkv_key_t key);
-    bool (*uint16)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value);
+    bkv_parse_retval_t (*uint16)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value);
     bkv_parse_retval_t (*str)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *value, int len);
     bkv_parse_retval_t (*float_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f);
 } bkv_val_callbacks_t;
 
 int bkv_val_init(bkv_val_t *p_val, uint8_t *ptr);
+
+/**
+ * @brief Gets the described elements in the given valuee.
+ * @param[in] v the origin value.
+ * @param[in] p_keys the xpath like way to get the right value.
+ * @param[out] nb_val the number of output value
+ * @param[out] p_val the returned value.
+ * @return BKV_OK in case of success.
+ * @return BKV_INV_STATE in case the value is not closed.
+ * @return BKV_INV_ARG in case of invalid argument.
+ *
+ * @note in case v is an array, @p_keys is not taken into account. Only the p_val are returned.
+ */
 int bkv_val_get2(bkv_val_t *v, const uint16_t *p_keys, int nb_val, bkv_val_t *p_val);
 
 int bkv_val_foreach(bkv_val_t *p_in_value, bkv_val_callbacks_t *p_cbs,void *p_data);
+/**
+ * @brief Releases memory allocateed by the method #bkv_val_get2 in array for example.
+ * @param[in] v the value to release.
+ * @return BKV_OK in case of success.
+ * @return BKV_INV_ARG in case of invalid argumen.
+ */
+bkv_error_t bkv_val_rel(bkv_val_t *v);
 
     /**
      *@}
