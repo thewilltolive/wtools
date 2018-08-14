@@ -102,7 +102,7 @@ static bkv_error_t dico_cached_destroy(void *l_priv, bkv_t *p_bkv_dico_handle){
         if (BKV_OK != (l_ret = bkv_create(&l_bkv_create,&l_lookup_ctx.dico))){
             return(l_ret);
         }
-        else if (BKV_OK != (l_ret = bkv_kv_map_open(l_lookup_ctx.dico,BKV_NO_KEY))){
+        else if (BKV_OK != (l_ret = bkv_kv_map_open(l_lookup_ctx.dico,BKV_DICO_KEY))){
             return(l_ret);
         }
         else if (W_NO_ERROR != wg_keytree_foreach(l_ctx->head, dico_cached_elem, &l_lookup_ctx)){

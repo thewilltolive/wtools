@@ -28,7 +28,7 @@ static bkv_error_t dico_direct_create(bkv_dico_create_t *p_create, void **l_priv
     l_bkv_create.create_type=BKV_CREATE_TYPE_WORK_IN_RAM;
     if (BKV_OK != bkv_create(&l_bkv_create,&l_bkv)){
     }
-    else if (BKV_OK != bkv_kv_map_open(l_bkv,BKV_NO_KEY)){
+    else if (BKV_OK != bkv_kv_map_open(l_bkv,BKV_DICO_KEY)){
     }
     else if (NULL == (l_ctx = malloc(sizeof(*l_ctx)))){
     } else {

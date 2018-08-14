@@ -97,7 +97,6 @@ typedef struct {
     bkv_parse_retval_t (*map_close)(void *p_data, bkv_key_t key);
     bkv_parse_retval_t (*array_open)(void *p_data, uint8_t *p_ptr, int array_len, bkv_key_t key);
     bkv_parse_retval_t (*array_close)(void *p_data);
-    int (*key)(void *p_data, bkv_key_t key);
     bkv_parse_retval_t (*uint16)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value);
     bkv_parse_retval_t (*str)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *value, int len);
     bkv_parse_retval_t (*float_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f);

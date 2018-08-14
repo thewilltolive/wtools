@@ -130,7 +130,7 @@ static void test_bkv_uc03_deep_array_search(void){
     /* do test the array. */
     { 
         uint16_t     l_search_array [4] = { TEST_KEY+1, TEST_KEY+2, BKV_KEY_INVALID };
-        bkv_val_t    l_out_value,*l_array_entry;
+        bkv_val_t    l_out_value;
         bkv_val_t    l_array_out_value[5];
         int          l_i;
         CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,
@@ -146,18 +146,13 @@ static void test_bkv_uc03_deep_array_search(void){
         CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_out_value,
                                                   NULL,
                                                   5,
-                                                  &l_array_out_value));
+                                                  &l_array_out_value[0]));
 
-
-
-#if 0
         for (l_i=0;l_i<5;l_i++){
-            l_array_entry=&l_out_value.u.array.values[l_i];
-            CU_ASSERT_EQUAL_FATAL(BKV_VAL_TYPE_INT16,l_array_entry->type);
-            CU_ASSERT_EQUAL_FATAL(l_value+l_i,l_array_entry->u.number.int16);
+            CU_ASSERT_EQUAL_FATAL(BKV_VAL_TYPE_INT16,l_array_out_value[l_i].type);
+            CU_ASSERT_EQUAL_FATAL(l_value+l_i+1,l_array_out_value[l_i].u.number.int16);
 
         }
-#endif
         CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_rel(&l_out_value));
     }
     bkv_destroy(l_handle);
@@ -184,11 +179,9 @@ int main(int argc, char **argv)
     }
 
     /* add the tests to the suite */
-#if  0
     if (NULL == CU_add_test(pSuite, "search in basic tree", test_bkv_uc03_deep_search)) {
         return CU_get_error();
     }
-#endif
 
     if (NULL == CU_add_test(pSuite, "search an array in basic tree", test_bkv_uc03_deep_array_search)) {
         return CU_get_error();

@@ -162,7 +162,7 @@ static void test_bkv_array(void){
     float        l_value=7.535434;
     uint16_t     l_keys[2] = { FLOAT_TEST_KEY, BKV_KEY_INVALID };
     bkv_val_t    l_val=BKV_VAL_INIT;
-    bkv_val_t    l_out_value[3]={BKV_VAL_INIT,BKV_VAL_INIT,BKV_VAL_INIT};
+    bkv_val_t    l_out_value[2]={BKV_VAL_INIT,BKV_VAL_INIT},l_array_value=BKV_VAL_INIT;
 
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
     l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
@@ -177,12 +177,13 @@ static void test_bkv_array(void){
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
-    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],sizeof(l_out_value)/sizeof(l_out_value[0]),&l_out_value[0]));
-    CU_ASSERT_EQUAL_FATAL(l_out_value[0].type,BKV_VAL_TYPE_ARRAY);
-    CU_ASSERT_EQUAL_FATAL(l_out_value[0].u.array.len,2);
-    for (i=0;i<l_out_value[0].u.array.len;i++){
-        l_out_value[i+1].type=BKV_VAL_TYPE_FLOAT;
-        CU_ASSERT_TRUE(abs(l_out_value[i+1].u.number.f - l_value) < 0.1);
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_array_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_array_value,NULL,sizeof(l_out_value)/sizeof(l_out_value[0]),&l_out_value[0]));
+    CU_ASSERT_EQUAL_FATAL(l_array_value.type,BKV_VAL_TYPE_ARRAY);
+    CU_ASSERT_EQUAL_FATAL(l_array_value.u.array.len,2);
+    for (i=0;i<l_array_value.u.array.len;i++){
+        CU_ASSERT_EQUAL_FATAL(l_out_value[i].type,BKV_VAL_TYPE_FLOAT);
+        CU_ASSERT_TRUE(abs(l_out_value[i].u.number.f - l_value) < 0.1);
     }
     bkv_destroy(l_handle);
     bkv_term();

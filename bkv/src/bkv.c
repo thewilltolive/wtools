@@ -250,23 +250,6 @@ static void set_key(int       hdr_type,
     (*p_offset)+=2;
 }
 
-int bkv_kv_key_add(bkv_t h,uint16_t key){
-    int l_ret=BKV_OK;
-    BKV_FCT_INIT(bkv_kv_key_add);
-    BKV_HDL(h);
-    if (key > 0xFFF){
-        return(BKV_KEY_OUT_OF_RANGE);
-    }
-    if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],SET_KEY)){
-        return(BKV_HDL_INV);
-    }
-    if (-1 == bkv_prepare(h,16)){
-        return(BKV_INV_STATE);
-    }
-    set_key(HDR_TYPE_KEY,key,&h->ptr[h->write_offset],&h->write_offset);
-    return(l_ret);
-}
-
 int bkv_kv_u16_add(bkv_t h,uint16_t key, uint16_t v){
     int l_ret=BKV_OK;
 
