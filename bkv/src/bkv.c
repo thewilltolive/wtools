@@ -290,6 +290,29 @@ int bkv_kv_float_add(bkv_t h,uint16_t key, float v){
     return(l_ret);
 }
 
+#define BKV_KV_TYPE_ADD(mtype,TYPE)     \
+int bkv_kv_##mtype##_add(bkv_t h,uint16_t key, mtype v){\
+    int l_ret=BKV_OK;\
+\
+    BKV_FCT_INIT(bkv_kv_##mtype##_add);\
+    BKV_HDL(h);\
+\
+    if (key > 0xFFF){\
+        return(BKV_KEY_OUT_OF_RANGE);\
+    }\
+    if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],SET_KEY)){\
+        return(BKV_HDL_INV);\
+    }\
+    if (-1 == bkv_prepare(h,16)){\
+        return(BKV_INV_STATE);\
+    }\
+    set_key(HDR_TYPE_##TYPE,key,&h->ptr[h->write_offset],&h->write_offset);\
+    cpu_to_le_##mtype(v,&h->ptr[h->write_offset],&h->write_offset);\
+    return(l_ret);\
+}
+
+BKV_KV_TYPE_ADD(double,DOUBLE)
+
 int bkv_kv_str_add(bkv_t h,uint16_t key, const uint8_t *str, int len){
     int l_ret=BKV_OK;
     if (key > 0xFFF){

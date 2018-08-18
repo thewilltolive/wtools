@@ -100,6 +100,7 @@ typedef struct {
     bkv_parse_retval_t (*uint16)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value);
     bkv_parse_retval_t (*str)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *value, int len);
     bkv_parse_retval_t (*float_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f);
+    bkv_parse_retval_t (*double_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, double f);
 } bkv_val_callbacks_t;
 
 int bkv_val_init(bkv_val_t *p_val, uint8_t *ptr);

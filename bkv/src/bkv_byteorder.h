@@ -31,8 +31,8 @@ int le64_to_cpu(uint8_t *m, int64_t *v, int *offset);
 int cpu_to_le64(int64_t v, uint8_t *m, int *offset);
 int lef_to_cpu(uint8_t *m, float *v, int *offset);
 int cpu_to_lef(float v, uint8_t *m, int *offset);
-int led_to_cpu(uint8_t *m, double *v, int *offset);
-int cpu_to_led(double v, uint8_t *m, int *offset);
+int le_double_to_cpu(uint8_t *m, double *v, int *offset);
+int cpu_to_le_double(double v, uint8_t *m, int *offset);
 
  
     /**

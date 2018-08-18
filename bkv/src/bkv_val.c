@@ -60,6 +60,7 @@ val_foreach(bkv_val_t           *v,
     header_type_t      l_hdr_type;
     bkv_ctx_t          l_ctx= BKV_CTX_INIT;
     float              l_float;
+    double             l_double;
 
     l_ptr=l_base;
 
@@ -134,6 +135,10 @@ val_foreach(bkv_val_t           *v,
             l_ptr+=sizeof(float);
             break;
         case HDR_TYPE_DOUBLE:
+            l_ptr+=HDR_SIZE;
+            le_double_to_cpu(l_ptr,&l_double,NULL);
+            l_ret=p_callbacks->double_fn(p_data,l_ptr,l_key, l_double);
+            l_ptr+=sizeof(double);
             break;
         default:
             l_ret=-1;
@@ -249,6 +254,24 @@ bkv_val_get_str(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *str, int l
     return(l_ret);
 }
 
+static bkv_parse_retval_t
+bkv_val_get_double(void *p_data, uint8_t *p_ptr, bkv_key_t key, double d){
+    int                       l_ret=0;
+    bkv_val_get_ctx_t        *l_ctx=p_data;
+    (void)p_data;
+    (void)p_ptr;
+    (void)key;
+    if (key == l_ctx->keys[l_ctx->key_offset]){
+        if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
+            l_ctx->val->type=BKV_VAL_TYPE_STRING;
+            l_ctx->val->u.number.d=d;
+            l_ctx->val_is_set=true;
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+    }
+    return(l_ret);
+}
+
 #define BKV_VAL_FCT_GET(mtype,TYPE,val_path)  \
 static bkv_parse_retval_t \
 bkv_val_get_##mtype(void *p_data, uint8_t *p_ptr, bkv_key_t key, mtype value){\
@@ -313,7 +336,8 @@ static bkv_val_callbacks_t s_val_get_callbacks = {
     bkv_val_get_array_close,
     bkv_val_get_uint16,
     bkv_val_get_str,
-    bkv_val_get_float
+    bkv_val_get_float,
+    bkv_val_get_double
 };
 
 int bkv_val_get2(bkv_val_t *v, 

@@ -38,6 +38,9 @@ typedef struct {
 } bkv_init_t;
 #define BKV_INIT { NULL }
 
+/**
+ * @brief Defines bkv creation types.
+ */
 typedef enum {
     BKV_CREATE_TYPE_WORK_IN_RAM                 =1<<0,
     BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE   =1<<1,
@@ -46,6 +49,9 @@ typedef enum {
     BKV_CREATE_TYPE_END_VALUE
 } bkv_create_type_t;
 
+/**
+ * @brief Defines bkv optimisation type.
+ */
 typedef enum {
     BKV_OPTIM_TYPE_SIZE                         =1<<0,
     BKV_OPTIM_TYPE_GENERATION                   =1<<1,
@@ -54,7 +60,7 @@ typedef enum {
 
 typedef struct {
     bkv_create_type_t  create_type;      /*!< create type.*/
-    bkv_optim_type_t   optim_type;       /*!< Optimisation type. */
+    bkv_optim_type_t   optim_type;       /*!< Optimisation type. Not implemented. */
     const char        *filename;         /*!< storage file name in case create_type is 
                                        #BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE or #BKV_CREATE_TYPE_OPEN_FILE_READ_ONLY. */
     uint8_t           *input_ptr;
@@ -66,11 +72,42 @@ typedef struct {
     BKV_OPTIM_TYPE_END_VALUE,\
     NULL, NULL, 0 , -1 , -1}
 
+/**
+ * @brief Initializes the bkv library.
+ * @param[in] i the initialisation parameters.
+ * @return BKV_OK in case of success.
+ * @return BKV_KO in case of failure.
+ * @return BKV_INV_STATE in case the @bkv_init method has already been called.
+ */
 int bkv_init(bkv_init_t *i);
-int bkv_term(void);
-int bkv_create(bkv_create_t *p_create, bkv_t *p_handle);
-int bkv_get_head(bkv_t h, uint8_t **p_head, int *p_len);
 
+/**
+ * @brief Terminates the bkv library.
+ * @return BKV_OK in case of success 
+ * @return BKV_INV_STATE in case the @bkv_init method has not been called.
+ */
+int bkv_term(void);
+
+/**
+ * @brief Creates a bkv handle.
+ * @param[in] p_create the bkv creation parameters.
+ * @param[out] p_handle the returned handle.
+ * @return BKV_OK in case of success.
+ * @return BKV_INV_ARG in case of failure.
+ */
+int bkv_create(bkv_create_t *p_create, bkv_t *p_handle);
+
+/**
+ * @brief Returns a memory pointer of the head map of the given bkv.
+ *
+ * @param[in] h the bkv handle.
+ * @param[out] p_head the returned pointer on the memory zone of the bkv.
+ * @param[out] p_len the length of the memory zone.
+ *
+ * @return BKV_OK in case of success. 
+ * @return BKV_INV_ARG in case of failure.
+ */
+int bkv_get_head(bkv_t h, uint8_t **p_head, int *p_len);
 
 /*!
  * @brief Synchonizes the data created in the bkv handle to a file (in case it is open with Read-Write file access).
@@ -91,9 +128,18 @@ int bkv_sync(bkv_t handle);
  *       the data to a file in case the kbs handle has been opened with a Read-Write file pointer.
  */
 int bkv_destroy(bkv_t handle);
+
+/**
+ * @brief Adds unsigned 16-bits length value to the bkv.
+ * @param[in] h Handle of the bkv.
+ * @param[in] key Key of the value.
+ * @param[in] v Value to add.
+ * @return BKV_OK in case of success
+ * @return BKV_INV_ARG in case of invalid argument.
+ */
 int bkv_kv_u16_add(bkv_t h,uint16_t key, uint16_t v);
 int bkv_kv_float_add(bkv_t h,uint16_t key, float v);
-int bkv_kv_double_add(bkv_t h,uint16_t key, float v);
+int bkv_kv_double_add(bkv_t h,uint16_t key, double v);
 int bkv_size(bkv_t h);
 
 /**

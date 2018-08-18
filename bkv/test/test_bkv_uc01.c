@@ -126,7 +126,7 @@ static void test_bkv_float(void){
     bkv_init_t   l_init;
     bkv_create_t l_bkv_create=BKV_CREATE_INIT;
     bkv_t        l_handle;
-   bkv_val_t    l_val=BKV_VAL_INIT;
+    bkv_val_t    l_val=BKV_VAL_INIT;
     bkv_val_t    l_out_value;
     uint8_t     *l_ptr=NULL;
     int          l_ptrlen;
@@ -146,7 +146,36 @@ static void test_bkv_float(void){
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
-    CU_ASSERT_TRUE((l_out_value.u.number.f - l_value) < 0.1);
+    CU_ASSERT_TRUE(abs(l_out_value.u.number.f - l_value) < 0.1);
+    bkv_destroy(l_handle);
+    bkv_term();
+}
+
+static void test_bkv_double(void){
+    bkv_init_t   l_init;
+    bkv_create_t l_bkv_create=BKV_CREATE_INIT;
+    bkv_t        l_handle;
+    bkv_val_t    l_val=BKV_VAL_INIT;
+    bkv_val_t    l_out_value;
+    uint8_t     *l_ptr=NULL;
+    int          l_ptrlen;
+#define DOUBLE_TEST_KEY (876)
+    int16_t      l_key=DOUBLE_TEST_KEY;
+    double       l_value=79789.535434;
+    uint16_t     l_keys[2] = { DOUBLE_TEST_KEY, BKV_KEY_INVALID };
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_init(&l_init));
+    l_bkv_create.create_type=BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE;
+    l_bkv_create.filename="test_file.db";
+    l_bkv_create.mode=0777;
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_create(&l_bkv_create,&l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_open(l_handle,BKV_NO_KEY));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_double_add(l_handle,l_key,l_value));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_get2(&l_val,&l_keys[0],1,&l_out_value));
+    CU_ASSERT_TRUE(abs(l_out_value.u.number.d - l_value) < 0.1);
     bkv_destroy(l_handle);
     bkv_term();
 }
@@ -223,6 +252,9 @@ int main(int argc, char **argv)
         return CU_get_error();
     }
     if (NULL == CU_add_test(pSuite, "test_bkv_float", test_bkv_float)) {
+        return CU_get_error();
+    }
+    if (NULL == CU_add_test(pSuite, "test_bkv_double", test_bkv_double)) {
         return CU_get_error();
     }
     if (NULL == CU_add_test(pSuite, "test_bkv_float_multi", test_bkv_float_multi)) {
