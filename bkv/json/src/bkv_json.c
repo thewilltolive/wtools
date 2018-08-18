@@ -233,7 +233,8 @@ static bkv_val_callbacks_t s_bkv_callbacks ={
     bkv_to_json_array_close,
     bkv_to_json_uint16,
     bkv_to_json_str,
-    bkv_to_json_float
+    bkv_to_json_float,
+    NULL
 };
 
 

@@ -299,9 +299,8 @@ w_error_t wg_keytree_create(keytree_list_t  *wordlist,
         return(W_E_BAD_PARAMETER);
     }
 #endif
-    if ((l_key_head = malloc(sizeof(*l_key_head))) == NULL)
-    {
-        printf("Failed to allocate %d bytes\n",sizeof(*l_key_head));
+    if ((l_key_head = malloc(sizeof(*l_key_head))) == NULL){
+        printf("Failed to allocate %zu bytes\n",sizeof(*l_key_head));
     }
     else 
     {

@@ -40,7 +40,7 @@ int bkv_dico_create(bkv_dico_create_t *p_dico_create,
                                                     &l_priv_handle))){
     }
     else if (NULL == (l_dico_ctx = malloc(sizeof(*l_dico_ctx)))){
-        printf(" Failed to allocate %d bytes",sizeof(*l_dico_ctx));
+        printf(" Failed to allocate %zu bytes",sizeof(*l_dico_ctx));
     }
     else{
         l_dico_ctx->plug=l_dico_plug;

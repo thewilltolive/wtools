@@ -146,7 +146,7 @@ val_foreach(bkv_val_t           *v,
 
         }
     } while((0 == (l_ret & BKV_PARSE_ACTION_STOP_LOOP)) && 
-            ((int)((int)l_ptr - (int)l_base) > 0));
+            ((int)((long)l_ptr - (long)l_base) > 0));
 
     return(BKV_OK);
 }

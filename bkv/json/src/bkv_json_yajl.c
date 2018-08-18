@@ -521,7 +521,7 @@ bkv_to_json_yajl_init(bkv_to_json_ctx_t *p_ctx){
     int                       l_ret=-1;
     bkv_to_json_yajl_ctx_t *l_ctx=p_ctx->priv_data;
     if (NULL == (l_ctx = malloc(sizeof(*l_ctx)))){
-        printf("Failed to allocate %d bytes\n",sizeof(*l_ctx));
+        printf("Failed to allocate %zu bytes\n",sizeof(*l_ctx));
     }
     else  if (NULL == (l_ctx->g = yajl_gen_alloc(NULL))) {
         printf("Failed to allocate gen handle\n");

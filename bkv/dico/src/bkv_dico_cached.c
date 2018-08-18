@@ -55,12 +55,12 @@ static bkv_error_t dico_cached_key_add(void *l_priv, bkv_key_t key, bkv_key_t *f
     (void)keystrlen;
     l_elem.w.len=keystrlen;
     l_elem.w.str=(uint8_t*)strdup(keystr);
-    l_elem.udata=(void*)(int)key;
+    l_elem.udata=(void*)(long)key;
     l_error = wg_keytree_add(l_ctx->head,&l_elem,&l_priv_data);
     switch(l_error){
     case W_E_EXISTS:
         if (NULL != final_key){
-            *final_key=(bkv_key_t)(int)l_priv_data;
+            *final_key=(bkv_key_t)(long)l_priv_data;
         }
         break;
     default:
@@ -77,7 +77,7 @@ static w_error_t dico_cached_elem(wg_key_t      *p_key,
     dico_cached_lookup_ctx_t *l_lookup_ctx=(dico_cached_lookup_ctx_t*)p_data;
 
     if (true == p_key->end_of_word){
-        if (BKV_OK != bkv_kv_str_add(l_lookup_ctx->dico,(bkv_key_t)(int)p_key->udata,p_str,strlen)){
+        if (BKV_OK != bkv_kv_str_add(l_lookup_ctx->dico,(bkv_key_t)(long)p_key->udata,p_str,strlen)){
             printf("Failed to add a string to cached dico\n");
         }
         else {

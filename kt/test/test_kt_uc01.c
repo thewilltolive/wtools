@@ -39,7 +39,7 @@ static void test_keytree_uc01_tc01(void){
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_add(l_key_head,&l_elem2,&l_priv_data));
     CU_ASSERT_EQUAL(NULL,l_priv_data);
     CU_ASSERT_EQUAL(W_E_EXISTS,wg_keytree_add(l_key_head,&l_elem1,&l_priv_data));
-    CU_ASSERT_EQUAL(32,(int)l_priv_data);
+    CU_ASSERT_EQUAL(32,(size_t)l_priv_data);
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_foreach(l_key_head,s_kt_counter,&s_nb_keys));
     CU_ASSERT_EQUAL(s_nb_keys,2);
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_release(l_key_head));
@@ -54,7 +54,7 @@ static void test_keytree_uc01_tc02(void){
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_add(l_key_head,&l_elem,&l_priv_data));
     CU_ASSERT_EQUAL(NULL,l_priv_data);
     CU_ASSERT_EQUAL(W_E_EXISTS,wg_keytree_add(l_key_head,&l_elem,&l_priv_data));
-    CU_ASSERT_EQUAL(32,(int)l_priv_data);
+    CU_ASSERT_EQUAL(32,(size_t)l_priv_data);
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_release(l_key_head));
 }
 
@@ -67,7 +67,7 @@ static void test_keytree_uc01_tc03(void){
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_add(l_key_head,&l_elem,&l_priv_data));
     CU_ASSERT_EQUAL(NULL,l_priv_data);
     CU_ASSERT_EQUAL(W_E_EXISTS,wg_keytree_add(l_key_head,&l_elem,&l_priv_data));
-    CU_ASSERT_EQUAL(32,(int)l_priv_data);
+    CU_ASSERT_EQUAL(32,(size_t)l_priv_data);
     CU_ASSERT_EQUAL(W_NO_ERROR,wg_keytree_release(l_key_head));
 }
 

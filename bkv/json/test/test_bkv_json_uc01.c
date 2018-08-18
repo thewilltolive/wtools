@@ -79,7 +79,7 @@ static void test_bkv_json_to_bkv_direct(void){
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str3,strlen(str3),(const uint8_t*)out_str,out_str_len));
     bkv_get_head(h,&l_str,&l_str_len);
-    printf(" LEN %d BKV LEN %d\n",strlen(str3),l_str_len);
+    printf(" LEN %zu BKV LEN %d\n",strlen(str3),l_str_len);
 
     bkv_from_json_yajl_parser_rel(from);
     bkv_to_json_yajl_parser_rel(to);
@@ -113,7 +113,7 @@ static void test_bkv_json_to_bkv_cached(void){
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
     CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str3,strlen(str3),(const uint8_t*)out_str,out_str_len));
     bkv_get_head(h,&l_str,&l_str_len);
-    printf(" LEN %d BKV LEN %d\n",strlen(str3),l_str_len);
+    printf(" LEN %zu BKV LEN %d\n",strlen(str3),l_str_len);
 
     bkv_from_json_yajl_parser_rel(from);
     bkv_to_json_yajl_parser_rel(to);
