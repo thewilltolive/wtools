@@ -32,6 +32,9 @@ int bkv_val_init(bkv_val_t *p_val, uint8_t *p_ptr){
         l_ret=BKV_OK;
         break;
     case HDR_TYPE_INT32:
+        p_val->type=BKV_VAL_TYPE_NUMBER;
+        le32_to_cpu(&p_ptr[HDR_SIZE],&p_val->u.number.int32,NULL);
+        l_ret=BKV_OK;
         break;
     case HDR_TYPE_INT64:
         break;
@@ -57,6 +60,7 @@ val_foreach(bkv_val_t           *v,
     uint8_t           *l_base=v->priv,*l_ptr,*l_save_ptr;
     int16_t            l_key;
     uint16_t           l_value,l_map_length,l_array_nb_elems;
+    uint32_t           l_value32;
     header_type_t      l_hdr_type;
     bkv_ctx_t          l_ctx= BKV_CTX_INIT;
     float              l_float;
@@ -118,6 +122,10 @@ val_foreach(bkv_val_t           *v,
             l_ptr+=sizeof(int16_t);
             break;
         case HDR_TYPE_INT32:
+            l_ptr+=HDR_SIZE;
+            le32_to_cpu(l_ptr,&l_value32,NULL);
+            l_ret=p_callbacks->uint32(p_data,l_ptr,l_key, l_value32);
+            l_ptr+=sizeof(int32_t);
             break;
         case HDR_TYPE_INT64:
             break;
@@ -236,6 +244,68 @@ bkv_val_get_uint16(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value){
 }
 
 static bkv_parse_retval_t
+bkv_val_get_uint32(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint32_t value){
+    bkv_val_get_ctx_t        *l_ctx=p_data;
+    bkv_parse_retval_t        l_ret=BKV_PARSE_ACTION_NONE;
+    (void)p_data;
+    (void)p_ptr;
+    (void)value;
+    (void)key;
+    if (NULL == l_ctx->keys){
+        l_ctx->val[l_ctx->val_offset].type=BKV_VAL_TYPE_INT32;
+        l_ctx->val[l_ctx->val_offset].u.number.int32=value;
+        l_ctx->val_is_set=true;
+        if ((l_ctx->val_offset +1) >= l_ctx->nb_val){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        l_ctx->val_offset++;
+    }
+    else if (key == l_ctx->keys[l_ctx->key_offset]){
+        if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
+            l_ctx->val->type=BKV_VAL_TYPE_INT32;
+            l_ctx->val->u.number.int32=value;
+            l_ctx->val_is_set=true;
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        else {
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+    }
+    return(l_ret);
+}
+
+static bkv_parse_retval_t
+bkv_val_get_uint64(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint64_t value){
+    bkv_val_get_ctx_t        *l_ctx=p_data;
+    bkv_parse_retval_t        l_ret=BKV_PARSE_ACTION_NONE;
+    (void)p_data;
+    (void)p_ptr;
+    (void)value;
+    (void)key;
+    if (NULL == l_ctx->keys){
+        l_ctx->val[l_ctx->val_offset].type=BKV_VAL_TYPE_INT64;
+        l_ctx->val[l_ctx->val_offset].u.number.int64=value;
+        l_ctx->val_is_set=true;
+        if ((l_ctx->val_offset +1) >= l_ctx->nb_val){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        l_ctx->val_offset++;
+    }
+    else if (key == l_ctx->keys[l_ctx->key_offset]){
+        if (l_ctx->keys[l_ctx->key_offset+1] == BKV_KEY_INVALID){
+            l_ctx->val->type=BKV_VAL_TYPE_INT64;
+            l_ctx->val->u.number.int64=value;
+            l_ctx->val_is_set=true;
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        else {
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+    }
+    return(l_ret);
+}
+
+static bkv_parse_retval_t
 bkv_val_get_str(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *str, int len){
     int                       l_ret=0;
     bkv_val_get_ctx_t        *l_ctx=p_data;
@@ -335,6 +405,8 @@ static bkv_val_callbacks_t s_val_get_callbacks = {
     bkv_val_get_array_open,
     bkv_val_get_array_close,
     bkv_val_get_uint16,
+    bkv_val_get_uint32,
+    bkv_val_get_uint64,
     bkv_val_get_str,
     bkv_val_get_float,
     bkv_val_get_double

@@ -8,16 +8,24 @@
 static int json_tools_node_compare(yajl_val a, 
                                    yajl_val b){
     size_t i;
+    int    r;
     if (a->type != b->type){
         return(-1);
     }
     else {
         switch(a->type){
         case yajl_t_string: 
-            return(strcmp(a->u.string,b->u.string));
+            printf(" str %s\n",a->u.string);
+            r=strcmp(a->u.string,b->u.string);
+            if (r) {
+                printf("strcmp(%s,%s)!=0\n",a->u.string,b->u.string);
+            }
             break;
         case yajl_t_number:
             if (!abs(a->u.number.d - b->u.number.d)<0.001){
+                printf(" flag %d \n",a->u.number.flags);
+                printf(" flag %d \n",b->u.number.flags);
+                printf("decimal %f != %f\n",a->u.number.d,b->u.number.d);
                 return(-1);
             }
             break;

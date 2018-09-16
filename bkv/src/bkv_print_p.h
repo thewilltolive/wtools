@@ -8,8 +8,8 @@
 **  1.0
 */
 
-#ifndef  BKV_PRINT_H_
-#define  BKV_PRINT_H_
+#ifndef  BKV_PRINT_P_H_
+#define  BKV_PRINT_P_H_
 
 
 #ifdef __cplusplus
@@ -34,7 +34,19 @@ extern "C"
 #define BKV_HDL(h) 
 #endif
 
-int bkv_print(const char *function, int line, char *fmt, ...);
+typedef enum {
+    BKV_ERROR_ST_DEBUG,
+    BKV_ERROR_ST_INFO,
+    BKV_ERROR_ST_WARN,
+    BKV_ERROR_ST_ERROR,
+    BKV_ERROR_ST_CRIT,
+    BKV_ERROR_ST_END_VALUE
+} bkv_error_st_t;
+
+int bkv_print(bkv_error_st_t error_st,
+              const char *function, 
+              int line, 
+              char *fmt, ...);
 
     /**
      *@}
@@ -45,5 +57,5 @@ int bkv_print(const char *function, int line, char *fmt, ...);
 }
 #endif
 
-#endif   /* ----- #ifndef BKV_PRINT_H_  ----- */
+#endif   /* ----- #ifndef BKV_PRINT_P_H_  ----- */
 

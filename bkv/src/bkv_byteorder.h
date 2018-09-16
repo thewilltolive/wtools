@@ -25,7 +25,7 @@ extern "C"
 
 int le16_to_cpu(uint8_t *m, uint16_t *v, int *offset);
 int cpu_to_le16(int16_t v, uint8_t *m, int *offset);
-int le32_to_cpu(uint8_t *m, int32_t *v, int *offset);
+int le32_to_cpu(uint8_t *m, uint32_t *v, int *offset);
 int cpu_to_le32(int32_t v, uint8_t *m, int *offset);
 int le64_to_cpu(uint8_t *m, int64_t *v, int *offset);
 int cpu_to_le64(int64_t v, uint8_t *m, int *offset);

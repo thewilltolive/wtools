@@ -4,6 +4,8 @@
 #endif
 #include "bkv_json.h"
 #include "bkv_val.h"
+#include "bkv_print.h"
+#include "bkv_print_p.h"
 #include "json_plugs.h"
 
 
@@ -124,10 +126,56 @@ bkv_to_json_uint16(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value){
 
     (void)p_ptr;
     if (NULL != l_ctx){
-        if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
+        if ((key != BKV_ARRAY_KEY) && 
+            (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val))){
             l_ret=BKV_PARSE_ACTION_STOP_LOOP;
         }
         else if (BKV_OK != l_ctx->parser->to_json_uint16_fn(l_ctx,
+                                                            (key==BKV_ARRAY_KEY)?true:false,
+                                                            l_val.u.string.str,
+                                                            l_val.u.string.len,
+                                                            value)){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+    }
+    return(l_ret);
+}
+
+static bkv_parse_retval_t
+bkv_to_json_uint32(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint32_t value){
+    bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
+    bkv_key_t            l_keys[2]= { key, BKV_KEY_INVALID};
+    bkv_parse_retval_t   l_ret;
+    bkv_val_t            l_val;
+
+    (void)p_ptr;
+    if (NULL != l_ctx){
+        if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        else if (BKV_OK != l_ctx->parser->to_json_uint32_fn(l_ctx,
+                                                         l_val.u.string.str,
+                                                         l_val.u.string.len,
+                                                         value)){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+    }
+    return(l_ret);
+}
+
+static bkv_parse_retval_t
+bkv_to_json_uint64(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint64_t value){
+    bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
+    bkv_key_t            l_keys[2]= { key, BKV_KEY_INVALID};
+    bkv_parse_retval_t   l_ret;
+    bkv_val_t            l_val;
+
+    (void)p_ptr;
+    if (NULL != l_ctx){
+        if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
+            l_ret=BKV_PARSE_ACTION_STOP_LOOP;
+        }
+        else if (BKV_OK != l_ctx->parser->to_json_uint64_fn(l_ctx,
                                                          l_val.u.string.str,
                                                          l_val.u.string.len,
                                                          value)){
@@ -146,15 +194,22 @@ bkv_to_json_str(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *p_str, int
 
     (void)p_ptr;
     if (NULL != l_ctx){
-        if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
-            l_ret|=BKV_PARSE_ACTION_STOP_LOOP;
+        if (BKV_ARRAY_KEY == key){
+            if (BKV_OK != l_ctx->parser->to_json_array_str_fn(l_ctx,p_str,len)){
+                l_ret|=BKV_PARSE_ACTION_STOP_LOOP;
+            }
         }
-        else if (BKV_OK != l_ctx->parser->to_json_str_fn(l_ctx,
-                                                         l_val.u.string.str,
-                                                         l_val.u.string.len,
-                                                         p_str,
-                                                         len)){
-            l_ret|=BKV_PARSE_ACTION_STOP_LOOP;
+        else {
+            if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
+                l_ret|=BKV_PARSE_ACTION_STOP_LOOP;
+            }
+            else if (BKV_OK != l_ctx->parser->to_json_str_fn(l_ctx,
+                                                             l_val.u.string.str,
+                                                             l_val.u.string.len,
+                                                             p_str,
+                                                             len)){
+                l_ret|=BKV_PARSE_ACTION_STOP_LOOP;
+            }
         }
     }
     return(l_ret);
@@ -212,6 +267,8 @@ bkv_to_json_float(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f){
         }
         else {
             if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
+                bkv_print(BKV_ERROR_ST_ERROR,__FUNCTION__,__LINE__,
+                          "Failed to find key %d",l_keys[0]);
                 l_ret|=BKV_PARSE_ACTION_STOP_LOOP;
             }
             else if (BKV_OK != l_ctx->parser->to_json_float_fn(l_ctx,
@@ -232,6 +289,8 @@ static bkv_val_callbacks_t s_bkv_callbacks ={
     bkv_to_json_array_open,
     bkv_to_json_array_close,
     bkv_to_json_uint16,
+    bkv_to_json_uint32,
+    bkv_to_json_uint64,
     bkv_to_json_str,
     bkv_to_json_float,
     NULL

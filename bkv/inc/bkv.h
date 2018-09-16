@@ -79,14 +79,14 @@ typedef struct {
  * @return BKV_KO in case of failure.
  * @return BKV_INV_STATE in case the @bkv_init method has already been called.
  */
-int bkv_init(bkv_init_t *i);
+extern int bkv_init(bkv_init_t *i);
 
 /**
  * @brief Terminates the bkv library.
  * @return BKV_OK in case of success 
  * @return BKV_INV_STATE in case the @bkv_init method has not been called.
  */
-int bkv_term(void);
+extern int bkv_term(void);
 
 /**
  * @brief Creates a bkv handle.
@@ -95,7 +95,7 @@ int bkv_term(void);
  * @return BKV_OK in case of success.
  * @return BKV_INV_ARG in case of failure.
  */
-int bkv_create(bkv_create_t *p_create, bkv_t *p_handle);
+extern int bkv_create(bkv_create_t *p_create, bkv_t *p_handle);
 
 /**
  * @brief Returns a memory pointer of the head map of the given bkv.
@@ -107,7 +107,7 @@ int bkv_create(bkv_create_t *p_create, bkv_t *p_handle);
  * @return BKV_OK in case of success. 
  * @return BKV_INV_ARG in case of failure.
  */
-int bkv_get_head(bkv_t h, uint8_t **p_head, int *p_len);
+extern int bkv_get_head(bkv_t h, uint8_t **p_head, int *p_len);
 
 /*!
  * @brief Synchonizes the data created in the bkv handle to a file (in case it is open with Read-Write file access).
@@ -116,7 +116,7 @@ int bkv_get_head(bkv_t h, uint8_t **p_head, int *p_len);
  * @return -1 in case of io failure (from posix)
  * @return -2 in case of erroneous handle creation flag.
 */
-int bkv_sync(bkv_t handle);
+extern int bkv_sync(bkv_t handle);
 
 /*!
  * @brief Destroys the given bkt_t handle.
@@ -127,7 +127,7 @@ int bkv_sync(bkv_t handle);
  *       User shall call #bkv_buffer_get() to acquired the memory or #bkv_buffer_sync() to synchronize
  *       the data to a file in case the kbs handle has been opened with a Read-Write file pointer.
  */
-int bkv_destroy(bkv_t handle);
+extern int bkv_destroy(bkv_t handle);
 
 /**
  * @brief Adds unsigned 16-bits length value to the bkv.
@@ -137,10 +137,21 @@ int bkv_destroy(bkv_t handle);
  * @return BKV_OK in case of success
  * @return BKV_INV_ARG in case of invalid argument.
  */
-int bkv_kv_u16_add(bkv_t h,uint16_t key, uint16_t v);
-int bkv_kv_float_add(bkv_t h,uint16_t key, float v);
-int bkv_kv_double_add(bkv_t h,uint16_t key, double v);
-int bkv_size(bkv_t h);
+extern int bkv_kv_u16_add(bkv_t h,uint16_t key, uint16_t v);
+
+/**
+ * @brief Adds unsigned 32-bits length value to the bkv.
+ * @param[in] h Handle of the bkv.
+ * @param[in] key Key of the value.
+ * @param[in] v Value to add.
+ * @return BKV_OK in case of success
+ * @return BKV_INV_ARG in case of invalid argument.
+ */
+extern int bkv_kv_u32_add(bkv_t h,uint32_t key, uint32_t v);
+
+extern int bkv_kv_float_add(bkv_t h,uint16_t key, float v);
+extern int bkv_kv_double_add(bkv_t h,uint16_t key, double v);
+extern int bkv_size(bkv_t h);
 
 /**
  * @brief Adds a string to the bkv.
@@ -150,14 +161,23 @@ int bkv_size(bkv_t h);
  * @param len length of the string.
  * @return BKV_OK in case of success.
  */
-int bkv_kv_str_add(bkv_t h, bkv_key_t key, const uint8_t *str, int len);
-int bkv_append(bkv_t h, bkv_t a);
-int bkv_kv_map_open(bkv_t h, bkv_key_t key);
-int bkv_kv_map_close(bkv_t h);
-int bkv_kv_array_open(bkv_t h, bkv_key_t key);
-int bkv_kv_array_close(bkv_t h);
-int bkv_kv_array_float_add(bkv_t h, float f);
-int bkv_kv_array_u16_add(bkv_t h, uint16_t u);
+extern int bkv_kv_str_add(bkv_t h, bkv_key_t key, const uint8_t *str, int len);
+extern int bkv_append(bkv_t h, bkv_t a);
+extern int bkv_kv_map_open(bkv_t h, bkv_key_t key);
+extern int bkv_kv_map_close(bkv_t h);
+extern int bkv_kv_array_open(bkv_t h, bkv_key_t key);
+extern int bkv_kv_array_close(bkv_t h);
+extern int bkv_kv_array_float_add(bkv_t h, float f);
+
+/**
+ * @brief Adds a string to the array bkv.
+ * @param h bkv handle.
+ * @param str the string not necessarly NULL-terminated.
+ * @param len length of the string.
+ * @return BKV_OK in case of success.
+ */
+extern int bkv_kv_array_str_add(bkv_t h, const uint8_t *str, int len);
+extern int bkv_kv_array_u16_add(bkv_t h, uint16_t u);
 #ifdef __cplusplus
 }
 #endif

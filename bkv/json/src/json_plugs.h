@@ -54,9 +54,12 @@ struct bkv_to_json_parser_s{
     bkv_error_t (*to_json_map_close_fn)(bkv_to_json_ctx_t *l_ctx);
     bkv_error_t (*to_json_array_open_fn)(bkv_to_json_ctx_t *l_ctx, int array_len,const uint8_t *key, int keylen);
     bkv_error_t (*to_json_array_close_fn)(bkv_to_json_ctx_t *l_ctx);
-    int (*to_json_uint16_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen, uint16_t value);
+    bkv_error_t (*to_json_uint16_fn)(bkv_to_json_ctx_t *l_ctx, bool is_array, uint8_t *str, int strlen, uint16_t value);
+    bkv_error_t (*to_json_uint32_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen, uint32_t value);
+    bkv_error_t (*to_json_uint64_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen, uint64_t value);
     bkv_error_t (*to_json_float_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen, float f);
     bkv_error_t (*to_json_array_float_fn)(bkv_to_json_ctx_t *l_ctx, float f);
+    bkv_error_t (*to_json_array_str_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *str, int strlen);
     int (*to_json_str_fn)(bkv_to_json_ctx_t *l_ctx, uint8_t *p_key_str, int key_strlen, uint8_t *p_value_str, int value_strlen);
     int (*to_json_finalize)(bkv_to_json_ctx_t *l_ctx, uint8_t **p_str, int *p_strlen);
 };

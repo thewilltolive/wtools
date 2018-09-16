@@ -38,10 +38,10 @@ int cpu_to_le16(int16_t v,uint8_t *m, int *offset){
     return(0);
 }
 
-int le32_to_cpu(uint8_t *m, int32_t *v, int *offset){
+int le32_to_cpu(uint8_t *m, uint32_t *v, int *offset){
     *v=(m[0]<<24)+(m[1]<<16)+(m[2]<<8)+m[3];
     if (offset)
-        *offset+=sizeof(int32_t);
+        *offset+=sizeof(uint32_t);
     return(0);
 }
 

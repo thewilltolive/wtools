@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include "bkv.h"
-#include "bkv_print.h"
+#include "bkv_print_p.h"
 #ifdef BKV_USE_POSIX_FILE_ACCESS
 #include "bkv_file.h"
 #endif
@@ -32,6 +32,7 @@ typedef enum {
     OPEN_ARRAY,
     CLOSE_ARRAY,
     ADD_ARRAY_FLOAT,
+    ADD_ARRAY_STR,
     ADD_ARRAY_U16,
     SET_KEY,
     SET_VALUE
@@ -105,20 +106,27 @@ static int bkv_check_state(state_t s, char t, action_t a){
         }
         break;
     case STATE_IN_MAP:
-        if ((t == MAP_KEY) && 
-            ((a == SET_KEY)||(a == CLOSE_MAP)||(a==OPEN_MAP)||(a==OPEN_ARRAY))){
+        if (((t == MAP_KEY) && 
+            ((a == SET_KEY)||(a == CLOSE_MAP)||(a==OPEN_MAP)||(a==OPEN_ARRAY))) ||
+            ((t == ARRAY_KEY) &&
+             ((a==OPEN_MAP) || (a==OPEN_ARRAY)))){
             l_ret=0;
         }
         break;
     case STATE_KEY_SET:
         break;
     case STATE_IN_ARRAY:
-        if ((a == ADD_ARRAY_FLOAT) || (a == ADD_ARRAY_U16) || (a == CLOSE_ARRAY)){
+        if ((a == OPEN_MAP) || 
+            (a == ADD_ARRAY_FLOAT) || 
+            (a == ADD_ARRAY_STR) || 
+            (a == ADD_ARRAY_U16) || 
+            (a == CLOSE_ARRAY) || 
+            (a == OPEN_ARRAY)){
             l_ret=0;
         }
         break;
     default:
-        bkv_print(__FUNCTION__,__LINE__,"Invalid state %d\n",s);
+        bkv_print(BKV_ERROR_ST_DEBUG,__FUNCTION__,__LINE__,"Invalid state %d\n",s);
         break;
     }
     return(l_ret);
@@ -217,10 +225,15 @@ static int bkv_prepare(bkv_t h, int size_in_bits){
     uint8_t    *l_ptr;
     bkv_error_t l_ret=BKV_INV_ARG;
 
+    PRINT_DBG(" mem_size %d write_offset %d size_in_bits %d",
+              h->mem_size,
+              h->write_offset,
+              size_in_bits);
+
     if (h->mem_size < (h->write_offset + (size_in_bits>>3))){
         /* need to append memory. */
         l_append_size=(h->mem_chunk_size==-1)?BKV_DEFAULT_MEM_CHUNK_SIZE:h->mem_chunk_size;
-        l_new_size=h->mem_size+l_append_size;
+        l_new_size=((h->mem_size/l_append_size)+1)*l_append_size;
         if ((-1 != h->max_size) && 
             (l_new_size > h->max_size)){
         }
@@ -270,6 +283,26 @@ int bkv_kv_u16_add(bkv_t h,uint16_t key, uint16_t v){
     return(l_ret);
 }
 
+int bkv_kv_u32_add(bkv_t h,uint32_t key, uint32_t v){
+    int l_ret=BKV_OK;
+
+    BKV_FCT_INIT(bkv_kv_u32_add);
+    BKV_HDL(h);
+
+    if (key > 0xFFF){
+        return(BKV_KEY_OUT_OF_RANGE);
+    }
+    if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],SET_KEY)){
+        return(BKV_HDL_INV);
+    }
+    if (-1 == bkv_prepare(h,32)){
+        return(BKV_INV_STATE);
+    }
+    set_key(HDR_TYPE_INT32,key,&h->ptr[h->write_offset],&h->write_offset);
+    cpu_to_le32(v,&h->ptr[h->write_offset],&h->write_offset);
+    return(l_ret);
+}
+
 int bkv_kv_float_add(bkv_t h,uint16_t key, float v){
     int l_ret=BKV_OK;
 
@@ -282,7 +315,7 @@ int bkv_kv_float_add(bkv_t h,uint16_t key, float v){
     if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],SET_KEY)){
         return(BKV_HDL_INV);
     }
-    if (-1 == bkv_prepare(h,16)){
+    if (-1 == bkv_prepare(h,48)){
         return(BKV_INV_STATE);
     }
     set_key(HDR_TYPE_FLOAT,key,&h->ptr[h->write_offset],&h->write_offset);
@@ -290,7 +323,7 @@ int bkv_kv_float_add(bkv_t h,uint16_t key, float v){
     return(l_ret);
 }
 
-#define BKV_KV_TYPE_ADD(mtype,TYPE)     \
+#define BKV_KV_TYPE_ADD(mtype,TYPE,size)     \
 int bkv_kv_##mtype##_add(bkv_t h,uint16_t key, mtype v){\
     int l_ret=BKV_OK;\
 \
@@ -303,7 +336,7 @@ int bkv_kv_##mtype##_add(bkv_t h,uint16_t key, mtype v){\
     if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],SET_KEY)){\
         return(BKV_HDL_INV);\
     }\
-    if (-1 == bkv_prepare(h,16)){\
+    if (-1 == bkv_prepare(h,size)){\
         return(BKV_INV_STATE);\
     }\
     set_key(HDR_TYPE_##TYPE,key,&h->ptr[h->write_offset],&h->write_offset);\
@@ -311,7 +344,7 @@ int bkv_kv_##mtype##_add(bkv_t h,uint16_t key, mtype v){\
     return(l_ret);\
 }
 
-BKV_KV_TYPE_ADD(double,DOUBLE)
+BKV_KV_TYPE_ADD(double,DOUBLE,80)
 
 int bkv_kv_str_add(bkv_t h,uint16_t key, const uint8_t *str, int len){
     int l_ret=BKV_OK;
@@ -324,6 +357,8 @@ int bkv_kv_str_add(bkv_t h,uint16_t key, const uint8_t *str, int len){
     if (-1 == bkv_prepare(h,(HDR_SIZE + STRING_VALUE_SIZE +len)*8)){
         return(BKV_INV_STATE);
     }
+    bkv_print(BKV_ERROR_ST_INFO,__FUNCTION__,__LINE__,
+                          "write_offset=%d size=%d",h->write_offset,h->mem_size);
     set_key(HDR_TYPE_STRING,key,&h->ptr[h->write_offset],&h->write_offset);
     cpu_to_le16(len,&h->ptr[h->write_offset],&h->write_offset);
     memcpy(&h->ptr[h->write_offset],str,len);
@@ -336,9 +371,11 @@ int bkv_kv_map_open(bkv_t h, bkv_key_t key){
     BKV_FCT_INIT(bkv_kv_map_open);
     BKV_HDL(h);
     if (-1 == bkv_check_state(h->state,(-1==h->deep_offset)?-1:h->deep_value[h->deep_offset],OPEN_MAP)){
+        bkv_print(BKV_ERROR_ST_ERROR,__FUNCTION__,__LINE__,"invalid state");
         return(BKV_HDL_INV);
     }
-    if (-1 == bkv_prepare(h,16)){
+    if (-1 == bkv_prepare(h,32)){
+        bkv_print(BKV_ERROR_ST_ERROR,__FUNCTION__,__LINE__,"Failed to prepare bhv");
         return(BKV_INV_STATE);
     }
     h->map_offset[h->deep_offset+1]=h->write_offset;
@@ -358,9 +395,13 @@ int bkv_kv_map_close(bkv_t h){
     if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],CLOSE_MAP)){
         return(BKV_HDL_INV);
     }
+
     if (-1 == bkv_prepare(h,64)){
         return(BKV_INV_STATE);
     }
+    bkv_print(BKV_ERROR_ST_INFO,__FUNCTION__,__LINE__,
+                          "write_offset=%d size=%d",h->write_offset,h->mem_size);
+
     h->ptr[h->write_offset] = (((HDR_TYPE_MAP_CLOSE)<<4) & 0xFF) ;
     h->write_offset+=HDR_SIZE;
     h->ptr[h->write_offset]=0xee;
@@ -374,13 +415,13 @@ int bkv_kv_map_close(bkv_t h){
     h->deep_offset--;
     assert(h->deep_offset >= -1);
     if (-1 == h->deep_offset){
-        h->state=STATE_TERM;
+        assert(-1);
     }
     else {
-        h->state=STATE_IN_MAP;
+        h->state=(h->deep_value[h->deep_offset]==MAP_KEY)?STATE_IN_MAP:STATE_IN_ARRAY;
     }
 #ifdef DEBUG
-    bkv_print_bkv(BKV_FCT_NAME,line,h);
+    bkv_print_bkv(BKV_ERROR_ST_DEBUG,BKV_FCT_NAME,line,h);
 #endif
     return(l_ret);
 }
@@ -410,7 +451,7 @@ int bkv_kv_array_float_add(bkv_t h, float f){
     if (-1 == bkv_check_state(h->state,(-1==h->deep_offset)?-1:h->deep_value[h->deep_offset],ADD_ARRAY_FLOAT)){
         return(BKV_HDL_INV);
     }
-    if (-1 == bkv_prepare(h,16)){
+    if (-1 == bkv_prepare(h,48)){
         return(BKV_INV_STATE);
     }
     set_key(HDR_TYPE_FLOAT,BKV_ARRAY_KEY,&h->ptr[h->write_offset],&h->write_offset);
@@ -419,6 +460,25 @@ int bkv_kv_array_float_add(bkv_t h, float f){
     return(l_ret);
 }
 
+int bkv_kv_array_str_add(bkv_t h, const uint8_t *str, int len){
+    int l_ret=BKV_OK;
+    if (-1 == bkv_check_state(h->state,h->deep_value[h->deep_offset],ADD_ARRAY_STR)){
+        return(BKV_HDL_INV);
+    }
+    if (-1 == bkv_prepare(h,(HDR_SIZE + STRING_VALUE_SIZE +len)*8)){
+        return(BKV_INV_STATE);
+    }
+    bkv_print(BKV_ERROR_ST_INFO,__FUNCTION__,__LINE__,
+                          "write_offset=%d size=%d",h->write_offset,h->mem_size);
+    set_key(HDR_TYPE_STRING,BKV_ARRAY_KEY,&h->ptr[h->write_offset],&h->write_offset);
+    cpu_to_le16(len,&h->ptr[h->write_offset],&h->write_offset);
+    memcpy(&h->ptr[h->write_offset],str,len);
+    h->write_offset+=len;
+    h->array_nb_elems[h->deep_offset] ++;
+    return(l_ret);
+}
+
+
 int bkv_kv_array_u16_add(bkv_t h, uint16_t u){
     int l_ret=BKV_OK;
     BKV_FCT_INIT(bkv_kv_map_open);
@@ -426,7 +486,7 @@ int bkv_kv_array_u16_add(bkv_t h, uint16_t u){
     if (-1 == bkv_check_state(h->state,(-1==h->deep_offset)?-1:h->deep_value[h->deep_offset],ADD_ARRAY_U16)){
         return(BKV_HDL_INV);
     }
-    if (-1 == bkv_prepare(h,16)){
+    if (-1 == bkv_prepare(h,32)){
         return(BKV_INV_STATE);
     }
     set_key(HDR_TYPE_INT16,BKV_ARRAY_KEY,&h->ptr[h->write_offset],&h->write_offset);
@@ -446,6 +506,9 @@ int bkv_kv_array_close(bkv_t h){
     if (-1 == bkv_prepare(h,16)){
         return(BKV_INV_STATE);
     }
+    bkv_print(BKV_ERROR_ST_INFO,__FUNCTION__,__LINE__,
+                          "write_offset=%d size=%d",h->write_offset,h->mem_size);
+
     h->ptr[h->write_offset] = (((HDR_TYPE_ARRAY_CLOSE)<<4) & 0xFF) ;
     h->write_offset+=HDR_SIZE;
     h->ptr[h->write_offset]=0xee;
@@ -471,7 +534,7 @@ int bkv_kv_array_close(bkv_t h){
         h->state=(h->deep_value[h->deep_offset]==MAP_KEY)?STATE_IN_MAP:STATE_IN_ARRAY;
     }
 #ifdef DEBUG
-    bkv_print_bkv(BKV_FCT_NAME,line,h);
+    bkv_print_bkv(BKV_ERROR_ST_DEBUG,BKV_FCT_NAME,line,h);
 #endif
     return(l_ret);
 }
@@ -488,11 +551,13 @@ int bkv_append(bkv_t h, bkv_t a){
     l_size = h->write_offset+a->write_offset;
     if (l_size > h->mem_size){
         l_size = ((l_size * BKV_DEFAULT_MEM_CHUNK_SIZE)/BKV_DEFAULT_MEM_CHUNK_SIZE);
+        //l_size = (((l_size / BKV_DEFAULT_MEM_CHUNK_SIZE) + 1) *BKV_DEFAULT_MEM_CHUNK_SIZE);
         if (NULL == (l_ptr = realloc(h->ptr,l_size))){
             return(BKV_HDL_MEM);
         }
         else {
             h->ptr=l_ptr;
+            h->mem_size=l_size;
         }
     }
     memcpy(&h->ptr[h->write_offset],&a->ptr[0],a->write_offset);

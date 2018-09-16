@@ -119,6 +119,41 @@ static void test_bkv_json_to_bkv_cached(void){
     bkv_to_json_yajl_parser_rel(to);
 }
 
+static void test_bkv_json_to_bkv_array_1(void){
+    bkv_from_json_parser_t  from=bkv_from_json_yajl_parser_get();
+    bkv_to_json_parser_t    to=bkv_to_json_yajl_parser_get();
+    const char*             str1="{ \"init\" : [ 0 , 1 ] }";
+    const char*             str2="{ \"v1\" : [ \"ok\",\"ko\",\"na\" ] }";
+    const char*             str3="{ \"v1\" : [ { \"binary\" : [0,1], \"boolean\":[ \"true\",\"false\"] }, { \"string\":\"abc...z\"}]}";
+    bkv_t                   h;
+    uint8_t                *out_str;
+    int                     out_str_len;
+    uint8_t                *l_str;
+    int                     l_str_len;
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
+                                               from,(uint8_t*)str1,
+                                               strlen(str1),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str1,strlen(str1),(const uint8_t*)out_str,out_str_len));
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
+                                               from,(uint8_t*)str2,strlen(str2),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str2,strlen(str2),(const uint8_t *)out_str,out_str_len));
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_from_json(BKV_DICO_TYPE_CACHED,
+                                               from,(uint8_t*)str3,strlen(str3),&h));
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_to_json(to,h,&out_str,&out_str_len));
+    printf(" str3 %.*s\n",out_str_len,out_str);
+    CU_ASSERT_EQUAL(0,bkv_json_tools_compare((const uint8_t *)str3,strlen(str3),(const uint8_t*)out_str,out_str_len));
+    bkv_get_head(h,&l_str,&l_str_len);
+    printf(" LEN %zu BKV LEN %d\n",strlen(str3),l_str_len);
+
+    bkv_from_json_yajl_parser_rel(from);
+    bkv_to_json_yajl_parser_rel(to);
+}
+
 static int test_bkv_get_array_elem_float(yajl_gen g,int level){
     int i;
     for (i=0;i<level+1;i++){
@@ -309,6 +344,7 @@ int main(int argc, char **argv)
         return CU_get_error();
     }
 
+#if 0
     /* add the tests to the suite */
     if (NULL == CU_add_test(pSuite, "test_bkv_to_json direct", test_bkv_json_to_bkv_direct)) {
         return CU_get_error();
@@ -318,7 +354,14 @@ int main(int argc, char **argv)
     if (NULL == CU_add_test(pSuite, "test_bkv_to_json cached", test_bkv_json_to_bkv_cached)) {
         return CU_get_error();
     }
+#endif
 
+    /* add the tests to the suite */
+    if (NULL == CU_add_test(pSuite, "test_bkv_to_json  array", test_bkv_json_to_bkv_array_1)) {
+        return CU_get_error();
+    }
+
+#if 0
     /* add the tests to the suite */
     if (NULL == CU_add_test(pSuite, "test_bkv_to_json_random", test_bkv_json_to_bkv_random)) {
         return CU_get_error();
@@ -333,6 +376,7 @@ int main(int argc, char **argv)
     if (NULL == CU_add_test(pSuite, "test_bkv_to_json_random array", test_bkv_json_to_bkv_float_array_random)) {
         return CU_get_error();
     }
+#endif
 
 
 

@@ -6,7 +6,7 @@
 #include <sys/mman.h>
 
 #include "bkv_file.h"
-#include "bkv_print.h"
+#include "bkv_print_p.h"
 
 static const char *s_file="bkv_file.c";
 
@@ -43,7 +43,7 @@ bkv_error_t bkv_open_file_create_write(const char      *p_file,
     int          l_fd;
     int          l_ret=BKV_INV_ARG;
     if (-1 == (l_fd = open(p_file,O_CREAT|O_TRUNC|O_RDWR,mode))){
-        bkv_print(s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
+        bkv_print(BKV_ERROR_ST_ERROR,s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
     }
     else {
         *p_fd=l_fd;
@@ -68,7 +68,7 @@ bkv_error_t bkv_open_file_readonly(const char      *p_file,
     int          l_ret=BKV_INV_ARG;
     uint8_t     *l_ptr;
     if (-1 == (l_fd = open(p_file,O_RDONLY))){
-        bkv_print(s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
+        bkv_print(BKV_ERROR_ST_ERROR,s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
     }
     else if (-1 == fstat(l_fd,&l_statbuf)){
     }
@@ -93,10 +93,10 @@ bkv_error_t bkv_open_file_readonly(const char      *p_file,
 
 int bkv_file_close(int fd, uint8_t *p_ptr, int len){
     if (-1 == munmap(p_ptr,len)){
-        bkv_print(s_file,__LINE__,"failed to munmap (%p,%d)",p_ptr,len);
+        bkv_print(BKV_ERROR_ST_ERROR,s_file,__LINE__,"failed to munmap (%p,%d)",p_ptr,len);
     }
     if (-1 == close(fd)){
-        bkv_print(s_file,__LINE__,"failed to close fd (%d)",fd);
+        bkv_print(BKV_ERROR_ST_ERROR,s_file,__LINE__,"failed to close fd (%d)",fd);
     }
     return(0);
 }

@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <bkv.h>
 #include <bkv_error.h>
 #include <bkv_types.h>
 
@@ -29,6 +30,8 @@ extern "C"
 typedef enum {
     BKV_VAL_TYPE_STRING,
     BKV_VAL_TYPE_INT16,
+    BKV_VAL_TYPE_INT32,
+    BKV_VAL_TYPE_INT64,
     BKV_VAL_TYPE_NUMBER,
     BKV_VAL_TYPE_FLOAT,
     BKV_VAL_TYPE_OBJECT,
@@ -52,6 +55,8 @@ struct bkv_val_s {
             long long i; /*< integer value, if representable. */
 #endif
             uint16_t   int16;
+            uint32_t   int32;
+            uint64_t   int64;
             float   f;   /*< float value, if representable. */
             double  d;   /*< double value, if representable. */
             char   *r;   /*< unparsed number in string form. */
@@ -98,6 +103,8 @@ typedef struct {
     bkv_parse_retval_t (*array_open)(void *p_data, uint8_t *p_ptr, int array_len, bkv_key_t key);
     bkv_parse_retval_t (*array_close)(void *p_data);
     bkv_parse_retval_t (*uint16)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value);
+    bkv_parse_retval_t (*uint32)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint32_t value);
+    bkv_parse_retval_t (*uint64)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint64_t value);
     bkv_parse_retval_t (*str)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *value, int len);
     bkv_parse_retval_t (*float_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f);
     bkv_parse_retval_t (*double_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, double f);

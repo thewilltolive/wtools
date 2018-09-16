@@ -2,12 +2,15 @@
 #include <string.h>
 #include <stdio.h>
 #include <yajl/yajl_parse.h>
+#include "bkv_print_p.h"
 #include "bkv_val.h"
 #include "bkv_json_yajl.h"
 #ifdef HAS_DICO
 #include "bkv_dico.h"
 #endif
 #include "json_plugs.h"
+
+
 
 typedef struct {
     bkv_key_t key_index;
@@ -26,8 +29,11 @@ static bkv_error_t bkv_to_json_yajl_map_open(bkv_to_json_ctx_t *p_ctx, const uin
 static int bkv_to_json_yajl_map_close(bkv_to_json_ctx_t *p_ctx);
 static int bkv_to_json_yajl_array_open(bkv_to_json_ctx_t *p_ctx, int array_len, const uint8_t *keyname, int keylen);
 static int bkv_to_json_yajl_array_close(bkv_to_json_ctx_t * ctx);
-static int bkv_to_json_yajl_uint16(bkv_to_json_ctx_t *p_ctx, uint8_t *p_str, int strlen, uint16_t value);
+static int bkv_to_json_yajl_uint16(bkv_to_json_ctx_t *p_ctx, bool is_array, uint8_t *p_str, int strlen, uint16_t value);
+static int bkv_to_json_yajl_uint32(bkv_to_json_ctx_t *p_ctx, uint8_t *p_str, int strlen, uint32_t value);
+static int bkv_to_json_yajl_uint64(bkv_to_json_ctx_t *p_ctx, uint8_t *p_str, int strlen, uint64_t value);
 static bkv_error_t bkv_to_json_yajl_float(bkv_to_json_ctx_t *p_ctx, uint8_t *str, int strlen, float f);
+static bkv_error_t bkv_to_json_yajl_array_string(bkv_to_json_ctx_t *p_ctx, uint8_t *p_str, int len);
 static bkv_error_t bkv_to_json_yajl_array_float(bkv_to_json_ctx_t *p_ctx, float f);
 static int bkv_to_json_yajl_str(bkv_to_json_ctx_t *p_ctx, uint8_t *str, int strlen, uint8_t *p_str_value, int str_valuelen);
 
@@ -38,8 +44,11 @@ static struct bkv_to_json_parser_s s_bkv_to_json_yajl_plug = {
     bkv_to_json_yajl_array_open,
     bkv_to_json_yajl_array_close,
     bkv_to_json_yajl_uint16,
+    bkv_to_json_yajl_uint32,
+    bkv_to_json_yajl_uint64,
     bkv_to_json_yajl_float,
     bkv_to_json_yajl_array_float,
+    bkv_to_json_yajl_array_string,
     bkv_to_json_yajl_str,
     bkv_to_json_yajl_finalize
 };
@@ -75,11 +84,13 @@ void bkv_to_json_yajl_parser_rel(bkv_to_json_parser_t p){
 static int
 bkv_json_get_boolean(void *ctx, int boolVal){
     bkv_from_json_ctx_t *l_ctx = (bkv_from_json_ctx_t*)ctx;
+    int                  l_ret=1;
     (void)boolVal;
     if (NULL != l_ctx){
         printf(" Find Boolean\n");
     }
-    return(1);
+    PRINT_DBG("return %d",l_ret);
+    return(l_ret);
 }
 
 static int
@@ -92,6 +103,7 @@ bkv_json_get_integer(void *ctx, long long integerVal){
         l_ret=0;
     }
 
+    PRINT_DBG("return %d",l_ret);
     return (l_ret);
 }
 
@@ -115,7 +127,75 @@ bkv_json_get_double(void *ctx, double doubleVal){
         }
     }
 
+    PRINT_DBG("return %d",1);
     return (1);
+}
+
+typedef enum {
+    DECIMAL_U16,
+    DECIMAL_U32,
+    DECIMAL_U64,
+    DECIMAL_FLOAT,
+    DECIMAL_DOUBLE
+
+}bkv_json_decimal_type_t;
+
+static int get_number(const char *numberVal, size_t numberLen,
+                      bkv_json_decimal_type_t *p_type,
+                      uint16_t                *p_uint16,
+                      uint32_t                *p_uint32,
+                      uint64_t                *p_uint64,
+                      float                   *p_float,
+                      double                  *p_double){
+    int      l_offset=0;
+    uint64_t l_u64=0;
+    double   l_double,l_divisor=10;
+    int      l_multi=1;
+    bool     l_floating=false;
+
+    while(l_offset < (int)numberLen){
+        if ('.' == numberVal[l_offset]){
+            l_double=(double)l_u64;
+            l_floating=true;
+        }
+        else if (l_floating) {
+            l_double +=numberVal[l_offset] / l_divisor;
+            l_divisor*=l_divisor*10;
+        }
+        else {
+            if (l_offset > 0){
+                l_u64*=10;
+            }
+            l_u64+=(numberVal[l_offset]-'0');
+            l_offset ++;
+            l_multi*=10;
+        }
+    }
+    if (l_floating){
+        if (l_offset < 4){
+            *p_type=DECIMAL_FLOAT;
+            *p_float = (float)l_double;
+        }
+        else {
+            *p_type=DECIMAL_DOUBLE;
+            *p_double = (double)l_double;
+        }
+    }
+    else {
+        if (l_u64 < (1<<16)){
+            *p_type=DECIMAL_U16;
+            *p_uint16 = (uint16_t)l_u64;
+        }
+        else if (l_u64 < ((uint64_t)1 << 32)){
+            *p_type=DECIMAL_U32;
+            *p_uint32 = (uint32_t)l_u64;
+        }
+        else {
+            *p_type=DECIMAL_U64;
+            *p_uint64 = (uint64_t)l_u64;
+        }
+    }
+    return(0);
 }
 
 static int
@@ -123,27 +203,62 @@ bkv_json_get_number(void *ctx, const char *numberVal, size_t numberLen){
     bkv_from_json_ctx_t      *l_ctx = (bkv_from_json_ctx_t *) ctx;
     bkv_from_json_yajl_ctx_t *l_yajl_ctx=l_ctx->priv_data;
     bkv_key_t                 l_index;
-    float                     l_value;
     int                       l_ret;
+    uint16_t                  l_u16;
+    uint32_t                  l_u32;
+    uint64_t                  l_u64;
+    float                     l_float;
+    double                    l_double;
+    bkv_json_decimal_type_t   l_type;
     (void) numberLen;
     (void)l_ctx;
     (void)ctx;
     if ((NULL != l_ctx) && (NULL != numberVal)){
-        l_value=strtof(numberVal,NULL);
+        get_number(numberVal,numberLen,
+                   &l_type,
+                   &l_u16,&l_u32,&l_u64,&l_float,&l_double);
         if (l_ctx->in_array){
-            if (BKV_OK != (l_ret = bkv_kv_array_float_add(l_ctx->data_handle,l_value))){
-                printf(" Failed to add array float\n");
+            switch(l_type){
+            case DECIMAL_U16:
+                if (BKV_OK != (l_ret = bkv_kv_array_u16_add(l_ctx->data_handle,l_u16))){
+                    printf(" Failed to add array float\n");
+                }
+                break;
+            case DECIMAL_FLOAT:
+                if (BKV_OK != (l_ret = bkv_kv_array_float_add(l_ctx->data_handle,l_float))){
+                    printf(" Failed to add array float\n");
+                }
+                break;
+            default:
+                break;
             }
         }
         else {
             l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
-            if (BKV_OK != (l_ret = bkv_kv_float_add(l_ctx->data_handle,l_index,l_value))){
-                printf(" Failed to add array\n");
+            switch(l_type){
+            case DECIMAL_U16:
+                if (BKV_OK != (l_ret = bkv_kv_u16_add(l_ctx->data_handle,l_index,l_u16))){
+                    printf(" Failed to add array\n");
+                }
+                break;
+            case DECIMAL_U32:
+                if (BKV_OK != (l_ret = bkv_kv_u32_add(l_ctx->data_handle,l_index,l_u32))){
+                    printf(" Failed to add array\n");
+                }
+                break;
+            case DECIMAL_FLOAT:
+                if (BKV_OK != (l_ret = bkv_kv_float_add(l_ctx->data_handle,l_index,l_float))){
+                    printf(" Failed to add array\n");
+                }
+                break;
+            default:
+                break;
             }
         }
  
     }
 
+    PRINT_DBG("return %d",1);
     return (1);
 }
 
@@ -157,10 +272,18 @@ bkv_json_get_string(void *ctx,
     int                       l_ret;
     (void)ctx;
     if ((NULL != l_ctx) && (NULL != stringVal)){
-        l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
-        if (-1 == (l_ret = bkv_kv_str_add(l_ctx->data_handle,l_index,stringVal,stringLen))){
+        if (l_ctx->in_array){
+            if (-1 == (l_ret = bkv_kv_array_str_add(l_ctx->data_handle,stringVal,stringLen))){
+                printf(" Failed to add array float\n");
+            }
+        }
+        else {
+            l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
+            if (-1 == (l_ret = bkv_kv_str_add(l_ctx->data_handle,l_index,stringVal,stringLen))){
+            }
         }
     }
+    PRINT_DBG("return %d",1);
     return (1);
 }
 
@@ -175,7 +298,7 @@ bkv_json_start_map(void * ctx){
         if (0 < l_ctx->deep){
             l_index=(l_yajl_ctx->existing_key_index!=BKV_NO_KEY)?l_yajl_ctx->existing_key_index:l_yajl_ctx->key_index;
             if (BKV_OK != (l_ret = bkv_kv_map_open(l_ctx->data_handle,l_index))){
-                printf("Failed to add map with key %d\n",l_yajl_ctx->key_index);
+                PRINT_ERR("Failed to add map with key %d\n",l_index);
             }
         }
         else {
@@ -268,6 +391,8 @@ bkv_json_map_keys(void *ctx, const unsigned char *key, size_t keylen){
             return(0);
         }
 #else
+        bkv_print(BKV_ERROR_ST_INFO,__FUNCTION__,__LINE__,
+                          "Add dico key %d %.*s",l_yajl_ctx->key_index+1,keylen,key);
         if (BKV_OK != (l_ret=bkv_dico_key_add(l_ctx->dico_handle,
                                               ++l_yajl_ctx->key_index,
                                               &l_returned_index,
@@ -317,7 +442,6 @@ bkv_from_json_yajl_parse(bkv_from_json_ctx_t *p_ctx,
         goto error;
     }
     if ((l_status = yajl_parse(l_yajl_handle, ptr, len)) != yajl_status_ok) {
-        yajl_free(l_yajl_handle);
         printf("Failed to parse json. status = %d", l_status);
         goto error;
     }
@@ -454,7 +578,28 @@ bkv_json_map_key(void *p_data, bkv_key_t key){
 #endif
 
 static int
-bkv_to_json_yajl_uint16(bkv_to_json_ctx_t *p_ctx, uint8_t *str, int strlen, uint16_t value){
+bkv_to_json_yajl_uint16(bkv_to_json_ctx_t *p_ctx, 
+                        bool               is_array,
+                        uint8_t           *str, 
+                        int                strlen,
+                        uint16_t           value){
+    bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
+    int                       l_ret=BKV_OK;
+
+    if (NULL != l_ctx){
+        if ((false == is_array) && 
+            (yajl_gen_status_ok != yajl_gen_string(l_ctx->g,str,strlen))){
+            l_ret=BKV_INV_ARG;
+        }
+        else if (yajl_gen_status_ok != yajl_gen_integer(l_ctx->g, (long long int)value)){
+            l_ret=BKV_INV_ARG;
+        }
+    }
+    return(l_ret);
+}
+
+static int
+bkv_to_json_yajl_uint32(bkv_to_json_ctx_t *p_ctx, uint8_t *str, int strlen, uint32_t value){
     bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
     int                       l_ret=BKV_OK;
 
@@ -468,6 +613,25 @@ bkv_to_json_yajl_uint16(bkv_to_json_ctx_t *p_ctx, uint8_t *str, int strlen, uint
     }
     return(l_ret);
 }
+
+
+static int
+bkv_to_json_yajl_uint64(bkv_to_json_ctx_t *p_ctx, uint8_t *str, int strlen, uint64_t value){
+    bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
+    int                       l_ret=BKV_OK;
+
+    if (NULL != l_ctx){
+        if (yajl_gen_status_ok != yajl_gen_string(l_ctx->g,str,strlen)){
+            l_ret=BKV_INV_ARG;
+        }
+        else if (yajl_gen_status_ok != yajl_gen_integer(l_ctx->g, (long long int)value)){
+            l_ret=BKV_INV_ARG;
+        }
+    }
+    return(l_ret);
+}
+
+
 
 
 static int
@@ -515,6 +679,21 @@ bkv_to_json_yajl_array_float(bkv_to_json_ctx_t *p_ctx, float f){
     }
     return(l_ret);
 }
+
+static bkv_error_t
+bkv_to_json_yajl_array_string(bkv_to_json_ctx_t *p_ctx, uint8_t *p_str, int len){
+    bkv_to_json_yajl_ctx_t *l_ctx=(bkv_to_json_yajl_ctx_t*)p_ctx->priv_data;
+    int                       l_ret=BKV_OK;
+
+    if (NULL != l_ctx){
+        if (yajl_gen_status_ok != yajl_gen_string(l_ctx->g, p_str, len)){
+            l_ret=BKV_INV_ARG;
+        }
+    }
+    return(l_ret);
+}
+
+
 
 static int
 bkv_to_json_yajl_init(bkv_to_json_ctx_t *p_ctx){
