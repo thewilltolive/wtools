@@ -8,6 +8,6 @@ add_library(${BKV_LIB} SHARED
 	bkv_mem.c
 	bkv_val.c
 	bkv_print.c)
-target_link_libraries(${BKV_LIB} m)
+target_link_libraries(${BKV_LIB} m lg)
 target_include_directories(${BKV_LIB} PUBLIC ${BKV_INC} )
 

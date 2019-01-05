@@ -1,7 +1,3 @@
-/*
-** Copyright (C) 2013 Renault-Trucks Defense.
-*/
-
 /**
 ** @file word.h
 **

@@ -33,6 +33,12 @@ extern "C"
  **/
 typedef struct wg_key_s wg_key_t;
 
+typedef enum {
+    KT_WEAK_TYPE_CASE_SENSITIVE      = 1<<0,
+    KT_WEAK_TYPE_ACCENT_SENSITIVE    = 1<<1,
+    KT_WEAK_TYPE_END_VALUE=0
+} kt_weak_type_t ;
+
 /**
  ** @brief Defines a key head.
  **/
@@ -54,22 +60,37 @@ typedef struct
 } wg_key_list_t;
 #define WG_KEY_INIT { NULL, 0 }
 
+typedef struct {
+    word_t         w;
+    void          *udata; /*!< Private user data linked to the element.*/
+} keytree_elem_t;
+#define KEYTREE_ELEM_INIT { { NULL, 0 }, 0} 
+#define KEYTREE_ELEM_VALUE(a,u) {{(uint8_t*)a,strlen(a)},(void*)u}
+
+typedef int (*kt_elem_cb_t)(wg_key_t      *elem,
+                            const uint8_t *p_str,
+                            int            len);
+
+typedef struct {
+    kt_weak_type_t   create_flags;
+    kt_elem_cb_t     cb;
+} kt_create_params_t;
+#define KT_CREATE_TYPE_INIT { KT_WEAK_TYPE_END_VALUE} 
+
+
 /**
  ** @brief Defines a alphanumeric key head of list.
  **/
 struct wg_key_head_s
 {
-    wg_key_list_t lower_case_char;
-    wg_key_list_t upper_case_char;
-    wg_key_list_t number_char;
-    wg_key_list_t other_char;
+    kt_weak_type_t type;
+    kt_elem_cb_t   cb;
+    wg_key_list_t  lower_case_char;
+    wg_key_list_t  upper_case_char;
+    wg_key_list_t  number_char;
+    wg_key_list_t  other_char;
 
 };
-
-typedef struct {
-    word_t         w;
-    int d;
-} keytree_elem_t;
 
 /*!
  * @brief keytree list.
@@ -78,7 +99,7 @@ typedef struct {
     keytree_elem_t *elems;
     int             nb_elems;
 } keytree_list_t;
-#define KEYTREE_LIST_INIT { NULL, 0 }
+#define KEYTREE_LIST_INIT { NULL, 0 }
 
 /**
  ** @brief Defines a key structure.
@@ -101,10 +122,10 @@ struct wg_key_s
  * @param[in] strlen the current string length
  * @return #w_error_t
  */
-typedef w_error_t (*wg_keytree_fn_t)(wg_key_t   *p_key,
-                                     const char *p_str,
-                                     int         strlen,
-                                     void       *p_data);
+typedef w_error_t (*wg_keytree_fn_t)(wg_key_t      *p_key,
+                                     const uint8_t *p_str,
+                                     int            strlen,
+                                     void          *p_data);
 
 /**
  ** @brief Generates a keytree from a word list.
@@ -114,13 +135,22 @@ typedef w_error_t (*wg_keytree_fn_t)(wg_key_t   *p_key,
  ** @retval W_E_BAD_PARAMETER    if a parameter is wrong.
  ** @retval W_NO_ERROR           in case of success.
  **/
-w_error_t wg_keytree_create(keytree_list_t  *wordlist, 
-                            keytree_head_t **key_head);
+w_error_t wg_keytree_create(kt_create_params_t  *params,
+                            keytree_list_t      *wordlist, 
+                            keytree_head_t     **key_head);
 
+/**
+ * @brief Adds a key to the tree.
+ * @param[in] head the tree head.
+ * @param[in] e the element to add
+ * @param[out] udata in case the added element already exists, udata is the private data of the existing element.
+ * @return W_NO_ERROR in case of success.
+ * @return W_E_EXISTS in case the given element string already exists. In this case, udata is filled with the private data.
+ * @return W_E_BAD_PARAMETER in case of invalid parameter.
+ */
 w_error_t wg_keytree_add(keytree_head_t *head,
-                         keytree_elem_t *e);
-
-w_error_t wg_keytree_destroy(keytree_head_t *e);
+                         keytree_elem_t *e,
+                         void           **udata);
 
 /**
  ** @brief Compares a string to the keytree.
@@ -129,6 +159,18 @@ w_error_t wg_keytree_destroy(keytree_head_t *e);
  **/
 w_error_t wg_keytree_strcmp(keytree_head_t  *key_head,
                             const char     *str);
+
+
+/**
+ ** @brief Compares a string to the keytree without case sensitive, accent, ... precisions.
+ ** @retval W_NO_ERROR        if the string str is found in the key tree.
+ ** @retval W_E_BAD_PARAMETER if the given string is not found in the key tree.
+ **/
+w_error_t wg_keytree_weakcmp(keytree_head_t  *key_head,
+                             kt_weak_type_t   weak_type,
+                            const char     *str);
+
+
 
 /**
  * @brief Loops on each dictionnary element and provide each element in the #wg_keytree_fn_t callback.
@@ -164,7 +206,7 @@ w_error_t wg_keytree_release(keytree_head_t *key_head);
  **/
 w_error_t keytree_key_init(keytree_elem_t *k,
                            const char     *str,
-                           int             d);
+                           void           *udata);
 
 /*!
  * @brief Uninitializes a key.

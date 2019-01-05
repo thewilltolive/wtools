@@ -5,7 +5,7 @@
 
 
 static bkv_error_t dico_cached_create(bkv_dico_create_t *p_create, void **l_priv);
-static bkv_error_t dico_cached_key_add(void *l_priv, bkv_key_t key, const uint8_t *keystr, int keystrlen);
+static bkv_error_t dico_cached_key_add(void *l_priv, bkv_key_t key, bkv_key_t *final_key, const uint8_t *keystr, int keystrlen);
 static bkv_error_t dico_cached_destroy(void *l_priv, bkv_t *p_bkv_dico_handle);
 
 typedef struct {
@@ -29,10 +29,11 @@ static bkv_error_t dico_cached_create(bkv_dico_create_t *p_create, void **l_priv
     keytree_list_t  l_list=WG_KEY_INIT;
     dico_cached_ctx_t *l_dico;
     bkv_error_t        l_ret=BKV_INV_ARG;
+    kt_create_params_t l_create_params=KT_CREATE_TYPE_INIT;
 
     (void)p_create;
     (void)l_priv;
-    if (W_NO_ERROR != wg_keytree_create(&l_list,&l_head)){
+    if (W_NO_ERROR != wg_keytree_create(&l_create_params,&l_list,&l_head)){
     }
     else if (NULL == (l_dico = malloc(sizeof(*l_dico)))){
     }
@@ -44,29 +45,40 @@ static bkv_error_t dico_cached_create(bkv_dico_create_t *p_create, void **l_priv
     return(l_ret);
 }
 
-static bkv_error_t dico_cached_key_add(void *l_priv, bkv_key_t key, const uint8_t *keystr, int keystrlen){
+static bkv_error_t dico_cached_key_add(void *l_priv, bkv_key_t key, bkv_key_t *final_key, const uint8_t *keystr, int keystrlen){
     keytree_elem_t            l_elem;
     dico_cached_ctx_t        *l_ctx=(dico_cached_ctx_t*)l_priv;
+    void                     *l_priv_data=NULL;
+    w_error_t                 l_error;
     (void)l_priv;
     (void)key;
     (void)keystr;
     (void)keystrlen;
     l_elem.w.len=keystrlen;
-    l_elem.w.str=strdup(keystr);
-    l_elem.d=key;
-    wg_keytree_add(l_ctx->head,&l_elem);
+    l_elem.w.str=(uint8_t*)strdup(keystr);
+    l_elem.udata=(void*)(long)key;
+    l_error = wg_keytree_add(l_ctx->head,&l_elem,&l_priv_data);
+    switch(l_error){
+    case W_E_EXISTS:
+        if (NULL != final_key){
+            *final_key=(bkv_key_t)(long)l_priv_data;
+        }
+        break;
+    default:
+        break;
+    }
     return(BKV_OK);
 }
 
-static w_error_t dico_cached_elem(wg_key_t    *p_key, 
-                                  const char  *p_str,
-                                  int          strlen,
-                                  void        *p_data){
+static w_error_t dico_cached_elem(wg_key_t      *p_key, 
+                                  const uint8_t *p_str,
+                                  int            strlen,
+                                  void          *p_data){
     w_error_t l_ret=W_E_BAD_PARAMETER;
     dico_cached_lookup_ctx_t *l_lookup_ctx=(dico_cached_lookup_ctx_t*)p_data;
 
     if (true == p_key->end_of_word){
-        if (BKV_OK != bkv_kv_str_add(l_lookup_ctx->dico,(bkv_key_t)p_key->udata,p_str,strlen)){
+        if (BKV_OK != bkv_kv_str_add(l_lookup_ctx->dico,(bkv_key_t)(long)p_key->udata,p_str,strlen)){
             printf("Failed to add a string to cached dico\n");
         }
         else {
@@ -91,7 +103,7 @@ static bkv_error_t dico_cached_destroy(void *l_priv, bkv_t *p_bkv_dico_handle){
         if (BKV_OK != (l_ret = bkv_create(&l_bkv_create,&l_lookup_ctx.dico))){
             return(l_ret);
         }
-        else if (BKV_OK != (l_ret = bkv_kv_map_open(l_lookup_ctx.dico,BKV_NO_KEY))){
+        else if (BKV_OK != (l_ret = bkv_kv_map_open(l_lookup_ctx.dico,BKV_DICO_KEY))){
             return(l_ret);
         }
         else if (W_NO_ERROR != wg_keytree_foreach(l_ctx->head, dico_cached_elem, &l_lookup_ctx)){
@@ -99,7 +111,7 @@ static bkv_error_t dico_cached_destroy(void *l_priv, bkv_t *p_bkv_dico_handle){
         else if (BKV_OK != (l_ret = bkv_kv_map_close(l_lookup_ctx.dico))){
             return(l_ret);
         }
-        else if (W_NO_ERROR != wg_keytree_destroy(l_ctx->head)){
+        else if (W_NO_ERROR != wg_keytree_release(l_ctx->head)){
         }
         else {
             *p_bkv_dico_handle=l_lookup_ctx.dico;

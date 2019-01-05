@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <bkv_error.h>
 #include <bkv_types.h>
 
 #ifdef __cplusplus
@@ -28,13 +29,19 @@ extern "C"
 typedef enum {
     BKV_VAL_TYPE_STRING,
     BKV_VAL_TYPE_INT16,
+    BKV_VAL_TYPE_INT32,
+    BKV_VAL_TYPE_INT64,
     BKV_VAL_TYPE_NUMBER,
+    BKV_VAL_TYPE_BOOLEAN,
     BKV_VAL_TYPE_FLOAT,
     BKV_VAL_TYPE_OBJECT,
     BKV_VAL_TYPE_ARRAY,
     BKV_VAL_TYPE_END_VALUE
 }  bkv_val_type_t;
 
+/**
+ * @brief Defines the stop value in the #bkv_val_get2 function.
+ */
 #define BKV_KEY_INVALID ((uint16_t)0xFFF)
 
 typedef struct bkv_val_s bkv_val_t;
@@ -46,11 +53,14 @@ struct bkv_val_s {
             uint8_t *str;    /*!< array of character not terminated by 0. */
             int len;      /*!< amount of bytes. */
         } string;
+        bool b;
         struct {
 #ifdef BKV_SUPPOPRT_C90
             long long i; /*< integer value, if representable. */
 #endif
             uint16_t   int16;
+            uint32_t   int32;
+            uint64_t   int64;
             float   f;   /*< float value, if representable. */
             double  d;   /*< double value, if representable. */
             char   *r;   /*< unparsed number in string form. */
@@ -68,10 +78,12 @@ struct bkv_val_s {
         } array;
 
     }u;
-    void *priv;
+    uint8_t *priv;
+    int      bkv_key_length;
+    int      deep_offset;
 } ;
 #define BKV_VAL_INIT {BKV_VAL_TYPE_END_VALUE, \
-    BKV_KEY_INVALID, { { NULL , 0 } }, NULL}
+    BKV_KEY_INVALID, {  { NULL , 0 } }, NULL, 0,  0}
 
 typedef enum {
     BKV_CTX_STATE_IN_MAP,
@@ -96,16 +108,47 @@ typedef struct {
     bkv_parse_retval_t (*map_close)(void *p_data, bkv_key_t key);
     bkv_parse_retval_t (*array_open)(void *p_data, uint8_t *p_ptr, int array_len, bkv_key_t key);
     bkv_parse_retval_t (*array_close)(void *p_data);
-    int (*key)(void *p_data, bkv_key_t key);
-    bool (*uint16)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value);
+    bkv_parse_retval_t (*uint16)(void *p_data, uint8_t *p_ptr, int map_deep, bkv_key_t key, uint16_t value);
+    bkv_parse_retval_t (*uint32)(void *p_data, uint8_t *p_ptr, int map_deep, bkv_key_t key, uint32_t value);
+    bkv_parse_retval_t (*uint64)(void *p_data, uint8_t *p_ptr, int map_deep, bkv_key_t key, uint64_t value);
     bkv_parse_retval_t (*str)(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint8_t *value, int len);
     bkv_parse_retval_t (*float_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, float f);
+    bkv_parse_retval_t (*double_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, double f);
+    bkv_parse_retval_t (*boolean_fn)(void *p_data, uint8_t *p_ptr, bkv_key_t key, bool v);
 } bkv_val_callbacks_t;
 
+/**
+ * @brief Initializes the #bkv_val_t structure with the given memory pointer. 
+ * @param[in] p_val  the initialized structure.
+ * @param[in] ptr the given pointer.
+ * @return BKV_OK if the initialization succeeded.
+ * @return BKV_INV_ARG in case the pointer is not a bkv.
+ */
 int bkv_val_init(bkv_val_t *p_val, uint8_t *ptr);
+
+/**
+ * @brief Gets the described elements in the given valuee.
+ * @param[in] v the origin value.
+ * @param[in] p_keys the xpath like way to get the right value.
+ * @param[out] nb_val the number of output value
+ * @param[out] p_val the returned value.
+ * @return BKV_OK in case of success.
+ * @return BKV_INV_STATE in case the value is not closed.
+ * @return BKV_INV_ARG in case of invalid argument.
+ *
+ * @note p_keys is an array of keys terminated by BKV_KEY_INVALID.
+ * @note in case v is an array, @p_keys is not taken into account. Only the p_val are returned.
+ */
 int bkv_val_get2(bkv_val_t *v, const uint16_t *p_keys, int nb_val, bkv_val_t *p_val);
 
 int bkv_val_foreach(bkv_val_t *p_in_value, bkv_val_callbacks_t *p_cbs,void *p_data);
+/**
+ * @brief Releases memory allocateed by the method #bkv_val_get2 in array for example.
+ * @param[in] v the value to release.
+ * @return BKV_OK in case of success.
+ * @return BKV_INV_ARG in case of invalid argumen.
+ */
+bkv_error_t bkv_val_rel(bkv_val_t *v);
 
     /**
      *@}

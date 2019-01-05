@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         return CU_get_error();
     }
     /* Run all tests using the CUnit Basic interface */
-    CU_set_output_filename("cunit_bkv_uc01");
+    CU_set_output_filename("cunit_bkv_uc02");
     CU_automated_run_tests();
     num_of_failures = CU_get_number_of_tests_failed();
     CU_cleanup_registry();

@@ -38,14 +38,14 @@ int cpu_to_le16(int16_t v,uint8_t *m, int *offset){
     return(0);
 }
 
-int le32_to_cpu(uint8_t *m, int32_t *v, int *offset){
+int le32_to_cpu(uint8_t *m, uint32_t *v, int *offset){
     *v=(m[0]<<24)+(m[1]<<16)+(m[2]<<8)+m[3];
     if (offset)
-        *offset+=sizeof(int32_t);
+        *offset+=sizeof(uint32_t);
     return(0);
 }
 
-int le64_to_cpu(uint8_t *m, int64_t *v, int *offset){
+int le_u64_to_cpu(uint8_t *m, uint64_t *v, int *offset){
     *v=((int64_t)m[0]<<56)+
         ((uint64_t)m[1]<<48)+
         ((uint64_t)m[2]<<40)+
@@ -69,10 +69,22 @@ int cpu_to_le32(int32_t v,uint8_t *m, int *offset){
     return(0);
 }
 
-
+int cpu_to_le_u64(int64_t v,uint8_t *m, int *offset){
+    m[0]=(v>>56)&0xFF;
+    m[1]=(v>>48)&0xFF;
+    m[2]=(v>>40)&0xFF;
+    m[3]=(v>>32)&0xFF;
+    m[4]=(v>>24)&0xFF;
+    m[5]=(v>>16)&0xFF;
+    m[6]=(v>>8)&0xFF;
+    m[7]=(v)&0xFF;
+    if (offset)
+        *offset+=sizeof(int64_t);
+    return(0);
+}
 int lef_to_cpu(uint8_t *m, float *v, int *offset){
     int32_t ivalue;
-    le32_to_cpu(m,&ivalue,offset);
+    le32_to_cpu(m,(uint32_t*)&ivalue,offset);
     ((uint8_t*)v)[3]= ivalue >> 24;
     ((uint8_t*)v)[2]= (ivalue >> 16) & 0xff;
     ((uint8_t*)v)[1]= (ivalue >> 8) & 0xff;
@@ -86,10 +98,20 @@ int cpu_to_lef(float v, uint8_t *m, int *offset){
     return(0);
 }
 
-int led_to_cpu(uint8_t *m, double *v, int *offset){
-    int64_t ivalue;
-    le64_to_cpu(m,&ivalue,offset);
-    ((uint8_t*)v)[3]= ivalue >> 24;
+int cpu_to_le_double(double v, uint8_t *m, int *offset){
+    int32_t tmp= (*((int32_t*)&v) & 0xFF000000)|(*((int32_t*)&v) & 0x07800000) | (*((int32_t*)&v) & 0x007fffff);
+    cpu_to_le_u64(tmp,m,offset);
+    return(0);
+}
+
+int le_double_to_cpu(uint8_t *m, double *v, int *offset){
+    uint64_t ivalue;
+    le_u64_to_cpu(m,&ivalue,offset);
+    ((uint8_t*)v)[7]= (ivalue >> 56) & 0xff;
+    ((uint8_t*)v)[6]= (ivalue >> 48) & 0xff;
+    ((uint8_t*)v)[5]= (ivalue >> 40) & 0xff;
+    ((uint8_t*)v)[4]= (ivalue >> 32) & 0xff;
+    ((uint8_t*)v)[3]= (ivalue >> 24) & 0xff;
     ((uint8_t*)v)[2]= (ivalue >> 16) & 0xff;
     ((uint8_t*)v)[1]= (ivalue >> 8) & 0xff;
     ((uint8_t*)v)[0]= ivalue & 0xff;

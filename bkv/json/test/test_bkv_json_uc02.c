@@ -19,6 +19,8 @@ static void test_bkv_json_tools_compare(void){
     CU_ASSERT_NOT_EQUAL(-1,bkv_json_tools_compare((const uint8_t *)str1,strlen(str1),(const uint8_t *)str2,strlen(str2)));
 }
 
+
+
 int main(int argc, char **argv)
 {
     CU_pSuite pSuite = NULL;
@@ -44,7 +46,7 @@ int main(int argc, char **argv)
     }
 
     /* Run all tests using the CUnit Basic interface */
-    CU_set_output_filename("cunit_bkv_uc01");
+    CU_set_output_filename("cunit_bkv_json_uc02");
     CU_automated_run_tests();
     num_of_failures = CU_get_number_of_tests_failed();
     CU_cleanup_registry();

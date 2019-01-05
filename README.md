@@ -18,12 +18,8 @@ The key map will be:
 
 The principle of the lookup function is that you will only have four ascii character comparison to find "the rolling stones" instead of four strcmp().
 
-
-
-
-
-
-
+# Binary Key Value
+Bkv helps serializing and parsing of key/value. It can be generated from JSON and JSON can be generated from it.
 
 
 

@@ -1,4 +1,3 @@
-
 if(BUILD_TEST)
-wtool_add_test(kt 01 kt)
+wtool_add_test(lg 01 lg)
 endif(BUILD_TEST)

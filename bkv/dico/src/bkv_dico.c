@@ -40,7 +40,7 @@ int bkv_dico_create(bkv_dico_create_t *p_dico_create,
                                                     &l_priv_handle))){
     }
     else if (NULL == (l_dico_ctx = malloc(sizeof(*l_dico_ctx)))){
-        printf(" Failed to allocate %d bytes",sizeof(*l_dico_ctx));
+        printf(" Failed to allocate %zu bytes",sizeof(*l_dico_ctx));
     }
     else{
         l_dico_ctx->plug=l_dico_plug;
@@ -53,10 +53,11 @@ int bkv_dico_create(bkv_dico_create_t *p_dico_create,
 
 int bkv_dico_key_add(bkv_dico_t     dico_handle,
                      bkv_key_t      key_index,
+                     bkv_key_t     *p_final_key,
                      const uint8_t *keystr,
                      int            keystrlen){
     dico_ctx_t      *l_dico_ctx=dico_handle;
-    return(l_dico_ctx->plug->key_add(l_dico_ctx->priv_handle,key_index, keystr,keystrlen));
+    return(l_dico_ctx->plug->key_add(l_dico_ctx->priv_handle,key_index,p_final_key,keystr,keystrlen));
 }
 int bkv_dico_destroy(bkv_dico_t   dico_handle,
                      bkv_t       *p_bkv_dico_handle){

@@ -29,7 +29,7 @@ extern "C"
      */
 
 typedef int (*dico_create_t)(bkv_dico_create_t *p_create, void **l_priv);
-typedef int (*dico_key_add_t)(void *l_priv, bkv_key_t key, const uint8_t *keystr, int keystrlen);
+typedef int (*dico_key_add_t)(void *l_priv, bkv_key_t key, bkv_key_t *p_final_key, const uint8_t *keystr, int keystrlen);
 typedef int (*dico_destroy_t)(void *l_priv, bkv_t *p_bkv_dico_handle);
 typedef struct {
     dico_create_t  create;

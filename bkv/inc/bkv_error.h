@@ -35,6 +35,16 @@ typedef enum {
 } bkv_error_t;
 
 
+#if 0
+#define PRINT_DBG(a, ...) do { printf("%s:%d:>",__FUNCTION__,__LINE__); printf(a,__VA_ARGS__); printf("\n"); } while(0)
+#else
+#define PRINT_DBG(a, ...)
+#endif
+
+#define PRINT_ERR(a, ...) do { printf("%s:%d:> ",__FUNCTION__,__LINE__); printf(a,__VA_ARGS__); printf("\n"); } while(0)
+
+
+
     /**
      *@}
      * End of group

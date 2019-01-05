@@ -3,7 +3,7 @@
 #include "dico_plugs.h"
 
 static bkv_error_t dico_direct_create(bkv_dico_create_t *p_create, void **l_priv);
-static bkv_error_t dico_direct_key_add(void *l_priv, bkv_key_t key, const uint8_t *keystr, int keystrlen);
+static bkv_error_t dico_direct_key_add(void *l_priv, bkv_key_t key, bkv_key_t *p_final_key, const uint8_t *keystr, int keystrlen);
 static bkv_error_t dico_direct_destroy(void *l_priv, bkv_t *p_dico_handle);
 
 typedef struct {
@@ -28,7 +28,7 @@ static bkv_error_t dico_direct_create(bkv_dico_create_t *p_create, void **l_priv
     l_bkv_create.create_type=BKV_CREATE_TYPE_WORK_IN_RAM;
     if (BKV_OK != bkv_create(&l_bkv_create,&l_bkv)){
     }
-    else if (BKV_OK != bkv_kv_map_open(l_bkv,BKV_NO_KEY)){
+    else if (BKV_OK != bkv_kv_map_open(l_bkv,BKV_DICO_KEY)){
     }
     else if (NULL == (l_ctx = malloc(sizeof(*l_ctx)))){
     } else {
@@ -40,10 +40,17 @@ static bkv_error_t dico_direct_create(bkv_dico_create_t *p_create, void **l_priv
     return(l_ret);
 }
 
-static bkv_error_t dico_direct_key_add(void *l_priv, bkv_key_t key, const uint8_t *keystr, int keystrlen){
+static bkv_error_t dico_direct_key_add(void *l_priv, 
+                                       bkv_key_t key, 
+                                       bkv_key_t *p_final_key,
+                                       const uint8_t *keystr, 
+                                       int keystrlen){
     dico_direct_ctx_t *l_ctx=(dico_direct_ctx_t*)l_priv;
     bkv_error_t        l_error=BKV_INV_ARG;
-    if (BKV_OK != (l_error != bkv_kv_str_add(l_ctx->handle,key,keystr,keystrlen))){
+    if (NULL != p_final_key){
+        *p_final_key=BKV_NO_KEY;
+    }
+    if (BKV_OK != (l_error = bkv_kv_str_add(l_ctx->handle,key,keystr,keystrlen))){
         printf("Failed to add key to direct dico");
     }
     return(l_error);
