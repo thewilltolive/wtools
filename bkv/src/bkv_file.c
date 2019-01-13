@@ -58,13 +58,19 @@ bkv_error_t bkv_open_file_update(const char      *p_file,
                                        uint8_t        **p_ptr){
     int          l_fd;
     int          l_ret=BKV_INV_ARG;
+    uint8_t     *l_ptr=NULL;
+    struct stat  l_statbuf;
     if (-1 == (l_fd = open(p_file,O_RDWR,mode))){
         lg_print(LG_LEVEL_ERROR,s_file,__LINE__,"Failed to create file %s. errno=%d",p_file,errno);
     }
+    else if (-1 == (l_ret = fstat(l_fd,&l_statbuf))){
+    }
+    else if (MAP_FAILED == (l_ptr = mmap(NULL,l_statbuf.st_size,PROT_WRITE|PROT_READ,MAP_PRIVATE,l_fd,0))){
+    }
     else {
         *p_fd=l_fd;
-        *p_size=0;
-        *p_ptr=NULL;
+        *p_size=l_statbuf.st_size;
+        *p_ptr=l_ptr;
         l_ret=BKV_OK;
     }
     if (BKV_OK != l_ret){
