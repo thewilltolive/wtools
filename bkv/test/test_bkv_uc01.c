@@ -23,6 +23,7 @@ static void test_bkv_init_term(void){
     CU_ASSERT_EQUAL(BKV_OK,bkv_term());
 }
 
+#ifdef BKV_USE_POSIX_FILE_ACCESS
 static void test_bkv_u16(void){
     bkv_init_t   l_init;
     bkv_create_t l_bkv_create=BKV_CREATE_INIT;
@@ -246,9 +247,7 @@ static void test_bkv_array(void){
     bkv_destroy(l_handle);
     bkv_term();
 }
-
-
-
+#endif
 
 
 int main(int argc, char **argv)
@@ -274,6 +273,7 @@ int main(int argc, char **argv)
     if (NULL == CU_add_test(pSuite, "test_bkv_init_term", test_bkv_init_term)) {
         return CU_get_error();
     }
+#ifdef BKV_USE_POSIX_FILE_ACCESS
     if (NULL == CU_add_test(pSuite, "test_bkv_u16", test_bkv_u16)) {
         return CU_get_error();
     }
@@ -295,6 +295,7 @@ int main(int argc, char **argv)
     if (NULL == CU_add_test(pSuite, "test_bkv_array", test_bkv_array)) {
         return CU_get_error();
     }
+#endif
 
 
     /* Run all tests using the CUnit Basic interface */

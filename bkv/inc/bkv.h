@@ -48,9 +48,11 @@ typedef struct {
  */
 typedef enum {
     BKV_CREATE_TYPE_WORK_IN_RAM                 =1<<0,
+#ifdef BKV_USE_POSIX_FILE_ACCESS
     BKV_CREATE_TYPE_OPEN_FILE_CREAT_AND_WRITE   =1<<1,
     BKV_CREATE_TYPE_OPEN_FILE_UPDATE            =1<<2,
     BKV_CREATE_TYPE_OPEN_FILE_READ_ONLY         =1<<3,
+#endif
     BKV_CREATE_TYPE_SAFE_INPUT_BUFFER           =1<<4,
     BKV_CREATE_TYPE_UNSAFE_INPUT_BUFFER         =1<<5,
     /*!< The input buffer isn't safe. It will be allocated and copied in RAM. */
@@ -227,7 +229,6 @@ extern int bkv_kv_array_boolean_add(bkv_t h, bool v);
 extern int bkv_finalize(bkv_t h);
 
 extern int bkv_kv_closed(bkv_t   handle, bool   *p_finalized);
-
 /**
  * @brief Adds a string to the array bkv.
  * @param h bkv handle.

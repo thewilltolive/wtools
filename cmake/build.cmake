@@ -8,7 +8,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --std=gnu99 -Wmissing-prototypes -Wbad-funct
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wswitch-default -Wall -Wextra")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wdeclaration-after-statement")
 
-add_definitions(-DBKV_USE_POSIX_FILE_ACCESS)
+if(BKV_FILE_SUPPORT)
+  message("Option: File access with be compiled")
+  add_definitions(-DBKV_USE_POSIX_FILE_ACCESS)
+endif()
 
 
 if(${CMAKE_BUILD_TYPE})

@@ -15,7 +15,7 @@ int bkv_file_create_and_mmap(int fd, int new_size, uint8_t **pp_ptr){
     int      l_ret=BKV_INV_ARG;
     uint8_t *l_ptr;
 #ifdef __USE_XOPEN_EXTENDED
-    if (-1 == (l_ret = truncate(fd,new_size))){
+    if (-1 == (l_ret = ftruncate(fd,new_size))){
     }
 #else
     char c=0;
@@ -49,7 +49,6 @@ bkv_error_t bkv_file_truncate(int fd,
     }
     return(l_ret);
 }
-
 
 bkv_error_t bkv_open_file_update(const char      *p_file,
                                        int              mode,
@@ -153,7 +152,7 @@ int bkv_file_close(int fd, uint8_t *p_ptr, int len){
 int bkv_file_sync(int fd, uint8_t *ptr){
     (void)ptr;
 #ifdef __USE_XOPEN_EXTENDED
-    sync(fd);
+    syncfs(fd);
 #else
     (void)fd;
 #endif

@@ -215,9 +215,11 @@ int bkv_finalize(bkv_t handle){
         if (BKV_INVALID != handle->end_hdl){
             bkv_append(handle,handle->end_hdl);
         }
+#ifdef BKV_USE_POSIX_FILE_ACCESS
         if (handle->fd != -1){
             l_ret = bkv_file_truncate(handle->fd,handle->mem_size);
         }
+#endif
         else if (NULL != handle->ptr){
             free(handle->ptr);
             free(handle);
@@ -245,10 +247,13 @@ int bkv_kv_closed(bkv_t   handle,
 int bkv_destroy(bkv_t handle){
     int l_ret=-1;
     if (NULL != handle){
+#ifdef BKV_USE_POSIX_FILE_ACCESS
         if (handle->fd != -1){
             l_ret = bkv_file_close(handle->fd,handle->ptr,handle->mem_size);
         }
-        else if (NULL != handle->ptr){
+        else 
+#endif
+            if (NULL != handle->ptr){
             free(handle->ptr);
             free(handle);
             l_ret=0;
@@ -766,6 +771,7 @@ int bkv_append(bkv_t h, bkv_t a){
     if (l_size > h->mem_size){
         l_size = ((l_size * BKV_DEFAULT_MEM_CHUNK_SIZE)/BKV_DEFAULT_MEM_CHUNK_SIZE);
         //l_size = (((l_size / BKV_DEFAULT_MEM_CHUNK_SIZE) + 1) *BKV_DEFAULT_MEM_CHUNK_SIZE);
+#ifdef BKV_USE_POSIX_FILE_ACCESS
         if (-1 != h->fd){
             if (BKV_OK != bkv_file_truncate(h->fd,l_size)){
                 return(BKV_HDL_INV);
@@ -773,7 +779,8 @@ int bkv_append(bkv_t h, bkv_t a){
             l_ptr=h->ptr;
             /* mmap.*/
         }
-        else if (NULL == (l_ptr = realloc(h->ptr,l_size))){
+#endif
+            if (NULL == (l_ptr = realloc(h->ptr,l_size))){
             return(BKV_HDL_MEM);
         }
         h->ptr=l_ptr;
