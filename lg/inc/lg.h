@@ -54,6 +54,11 @@ typedef struct{
 }lg_init_params_t;
 #define LG_INIT_PARAMS_INIT {LG_TYPE_END_VALUE}
 
+#define LG_ASSERT_NOT_NULL(arg) if (arg == NULL) { \
+        lg_print(LG_LEVEL_ERROR,__FUNCTION__,__LINE__,\
+                 "Invalid argument "#arg);\
+        return(LG_E_BAD_PARAMETER);}
+
 /*!
  * @brief Initializes the Log Wrapper library for current process.
  */
