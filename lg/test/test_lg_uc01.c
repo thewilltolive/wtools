@@ -13,7 +13,7 @@ static int clean_suite(void){
 static void test_lw_uc01_tc01(void){
     lg_init_params_t l_lw_init_params=LG_INIT_PARAMS_INIT;
 
-    CU_ASSERT_EQUAL(-1,lg_init(NULL));
+    CU_ASSERT_EQUAL(LG_E_BAD_PARAMETER,lg_init(NULL));
     CU_ASSERT_EQUAL(0,lg_init(&l_lw_init_params));
     CU_ASSERT_EQUAL(0,lg_lib_add("toto"));
     CU_ASSERT_EQUAL(0,lg_term());
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     }
 
     /* add a suite to the registry */
-    pSuite = CU_add_suite("Suite bkv_to_json", init_suite, clean_suite);
+    pSuite = CU_add_suite("Suite "LIBNAME, init_suite, clean_suite);
     if (NULL == pSuite) {
         CU_cleanup_registry();
         return CU_get_error();
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 
 
     /* Run all tests using the CUnit Basic interface */
-    CU_set_output_filename("cunit_lw_uc01");
+    CU_set_output_filename("cunit_"LIBNAME"_uc01");
     CU_automated_run_tests();
     num_of_failures = CU_get_number_of_tests_failed();
     CU_cleanup_registry();

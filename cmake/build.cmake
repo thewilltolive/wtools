@@ -27,3 +27,5 @@ macro(wtool_add_test comp test)
 	  WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
 	  COMMAND "${CMAKE_BINARY_DIR}/bin/${test_name}")
 endmacro()
+
+include(cmake/cmp.cmake)
