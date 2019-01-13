@@ -226,6 +226,8 @@ extern int bkv_kv_array_boolean_add(bkv_t h, bool v);
  */
 extern int bkv_finalize(bkv_t h);
 
+extern int bkv_kv_closed(bkv_t   handle, bool   *p_finalized);
+
 /**
  * @brief Adds a string to the array bkv.
  * @param h bkv handle.

@@ -88,6 +88,7 @@ static void test_bkv_file_insert_bkv(void){
 #define NB_KEYS (5)
     uint16_t             l_u16_key_array[NB_KEYS];
     uint16_t             l_u16_value_array[NB_KEYS];
+    bool                 l_finalized=false;
 
     unlink(l_filename);
 
@@ -108,8 +109,14 @@ static void test_bkv_file_insert_bkv(void){
     for(l_i=0;l_i<NB_KEYS;l_i++){
         CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_u16_add(l_handle,l_u16_key_array[l_i],l_u16_value_array[l_i]));
     }
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_closed(l_handle,&l_finalized));
+    CU_ASSERT_EQUAL(l_finalized,false);
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_map_close(l_handle));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_finalize(l_handle));
+
+    CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_kv_closed(l_handle,&l_finalized));
+    CU_ASSERT_EQUAL(l_finalized,true);
+
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_get_head(l_handle,&l_ptr,&l_ptrlen));
     CU_ASSERT_EQUAL_FATAL(BKV_OK,bkv_val_init(&l_val,l_ptr));
     l_lookup_array[0]=l_lookup_key;
@@ -170,7 +177,7 @@ int main(int argc, char **argv)
 
 
     /* Run all tests using the CUnit Basic interface */
-    CU_set_output_filename("cunit_bkv_uc01");
+    CU_set_output_filename("cunit_bkv_uc04");
     CU_automated_run_tests();
     num_of_failures = CU_get_number_of_tests_failed();
     CU_cleanup_registry();

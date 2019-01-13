@@ -139,6 +139,7 @@ int bkv_create(bkv_create_t *p_create, bkv_t *p_h){
     int          l_ret=BKV_OK;
     int          l_default_write_offset=0;
     bkv_t        l_bkv=NULL;
+    state_t      l_state=STATE_INIT;
     uint8_t     *l_ptr=NULL;
 
     assert(NULL != p_create);
@@ -151,9 +152,13 @@ int bkv_create(bkv_create_t *p_create, bkv_t *p_h){
         break;
     case BKV_CREATE_TYPE_OPEN_FILE_UPDATE:
         l_ret=bkv_open_file_update(p_create->filename,p_create->mode,&l_fd,&l_size,&l_ptr);
+        l_state=STATE_TERM;
         break;
     case BKV_CREATE_TYPE_OPEN_FILE_READ_ONLY:
         if (BKV_OK != (l_ret=bkv_open_file_readonly(p_create->filename,&l_fd,&l_size,&l_ptr))){
+        }
+        else {
+            l_state=STATE_TERM;
         }
         break;
 #endif
@@ -189,7 +194,7 @@ int bkv_create(bkv_create_t *p_create, bkv_t *p_h){
         }
         else {
             memset(l_bkv,0,sizeof(*l_bkv));
-            l_bkv->state=STATE_INIT;
+            l_bkv->state=l_state;
             l_bkv->fd=l_fd;
             l_bkv->ptr=l_ptr;
             l_bkv->mem_size=l_size;
@@ -223,6 +228,18 @@ int bkv_finalize(bkv_t handle){
         }
     }
     return(l_ret);
+}
+
+int bkv_kv_closed(bkv_t   handle,
+                  bool   *p_finalized){
+    if (NULL == handle){
+        return(LG_E_BAD_PARAMETER);
+    }
+    if (NULL == p_finalized){
+        return(LG_E_BAD_PARAMETER);
+    }
+    *p_finalized=handle->state==STATE_TERM;
+    return(BKV_OK);
 }
 
 int bkv_destroy(bkv_t handle){
@@ -333,6 +350,7 @@ int bkv_write_offset_set(bkv_t handle,
                 handle->deep_offset=p_val->deep_offset;
                 /* TBD: ?? */
                 handle->deep_value[handle->deep_offset]= '{';
+                handle->state=STATE_IN_MAP;
                 l_ret=BKV_OK;
             }
         }
@@ -561,7 +579,7 @@ int bkv_kv_map_close(bkv_t h){
     h->deep_offset--;
     assert(h->deep_offset >= -1);
     if (-1 == h->deep_offset){
-        assert(-1);
+        h->state=STATE_TERM;
     }
     else {
         h->state=(h->deep_value[h->deep_offset]==MAP_KEY)?STATE_IN_MAP:STATE_IN_ARRAY;

@@ -128,7 +128,9 @@ val_foreach(bkv_val_t           *v,
             break;
         case HDR_TYPE_ARRAY_CLOSE:
             l_ptr+=HDR_SIZE;
-            l_ret=p_callbacks->array_close(p_data);
+            if (NULL != p_callbacks->array_close){
+                l_ret=p_callbacks->array_close(p_data);
+            }
             l_ctx.map_deep--;
             l_ptr+=ARRAY_CLOSE_VALUE_SIZE;
             break;
