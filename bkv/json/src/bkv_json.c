@@ -118,13 +118,15 @@ bkv_to_json_map_close(void *p_data, bkv_key_t key){
 
 
 static bkv_parse_retval_t
-bkv_to_json_uint16(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value){
+bkv_to_json_uint16(void *p_data, uint8_t *p_ptr, int map_deep, bkv_key_t key, uint16_t value){
     bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
     bkv_key_t            l_keys[2]= { key, BKV_KEY_INVALID};
     bkv_parse_retval_t   l_ret;
     bkv_val_t            l_val;
 
     (void)p_ptr;
+    (void)map_deep;
+
     if (NULL != l_ctx){
         if ((key != BKV_ARRAY_KEY) && 
             (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val))){
@@ -142,13 +144,15 @@ bkv_to_json_uint16(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint16_t value){
 }
 
 static bkv_parse_retval_t
-bkv_to_json_uint32(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint32_t value){
+bkv_to_json_uint32(void *p_data, uint8_t *p_ptr, int map_deep, bkv_key_t key, uint32_t value){
     bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
     bkv_key_t            l_keys[2]= { key, BKV_KEY_INVALID};
     bkv_parse_retval_t   l_ret;
     bkv_val_t            l_val;
 
     (void)p_ptr;
+    (void)map_deep;
+
     if (NULL != l_ctx){
         if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
             l_ret=BKV_PARSE_ACTION_STOP_LOOP;
@@ -164,13 +168,15 @@ bkv_to_json_uint32(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint32_t value){
 }
 
 static bkv_parse_retval_t
-bkv_to_json_uint64(void *p_data, uint8_t *p_ptr, bkv_key_t key, uint64_t value){
+bkv_to_json_uint64(void *p_data, uint8_t *p_ptr, int map_deep, bkv_key_t key, uint64_t value){
     bkv_to_json_ctx_t *l_ctx=(bkv_to_json_ctx_t*)p_data;
     bkv_key_t            l_keys[2]= { key, BKV_KEY_INVALID};
     bkv_parse_retval_t   l_ret;
     bkv_val_t            l_val;
 
     (void)p_ptr;
+    (void)map_deep;
+
     if (NULL != l_ctx){
         if (BKV_OK != bkv_val_get2(&l_ctx->dico_val,&l_keys[0],1,&l_val)){
             l_ret=BKV_PARSE_ACTION_STOP_LOOP;
