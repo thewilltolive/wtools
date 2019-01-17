@@ -31,4 +31,5 @@ macro(wtool_add_test comp test)
 	  COMMAND "${CMAKE_BINARY_DIR}/bin/${test_name}")
 endmacro()
 
-include(cmake/cmp.cmake)
+include(${WTOOLS_BASE_DIR}/cmake/cmp.cmake)
+

@@ -16,4 +16,7 @@ add_library(${BKV_LIB} SHARED
 	bkv_print.c)
 target_link_libraries(${BKV_LIB} m lg)
 target_include_directories(${BKV_LIB} PUBLIC ${BKV_INC} )
+if (BKV_FILE_SUPPORT)
+	target_compile_definitions(${BKV_LIB} PUBLIC -D BKV_USE_POSIX_FILE_ACCESS)
+endif()
 
