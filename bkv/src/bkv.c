@@ -778,7 +778,7 @@ int bkv_append(bkv_t h, bkv_t a){
             }
             l_ptr=h->ptr;
             /* mmap.*/
-        }
+        } else
 #endif
             if (NULL == (l_ptr = realloc(h->ptr,l_size))){
             return(BKV_HDL_MEM);
