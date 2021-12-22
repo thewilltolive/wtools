@@ -8,4 +8,5 @@ add_subdirectory(lg)
 add_subdirectory(kt)
 add_definitions(-DHAS_DICO)
 add_subdirectory(bkv)
+add_subdirectory(rbt)
 
