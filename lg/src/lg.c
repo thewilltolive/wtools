@@ -44,8 +44,9 @@ int lg_term(void){
 }
 
 int lg_print(lg_level_t     level,
-              const char   *p_function, 
-              int           line, 
+              const char   *p_file,
+              int           line,
+              const char   *p_function,
               char         *p_fmt, ...){
     int         l_ret;
     va_list     l_va;
@@ -53,7 +54,7 @@ int lg_print(lg_level_t     level,
 
     switch(level){
     case LG_LEVEL_DEBUG:
-        l_st_str="DEBUG";
+        l_st_str="DEBG";
         break;
     case LG_LEVEL_INFO:
         l_st_str="INFO";
@@ -62,7 +63,7 @@ int lg_print(lg_level_t     level,
         l_st_str="WARN";
         break;
     case LG_LEVEL_ERROR:
-        l_st_str="ERROR";
+        l_st_str="ERRO";
         break;
     case LG_LEVEL_CRIT:
         l_st_str="CRIT";
@@ -71,7 +72,11 @@ int lg_print(lg_level_t     level,
         l_st_str=NULL;
         break;
     }
-    printf("%s:%s:%d:> ",l_st_str,p_function,line);
+    if (NULL == p_function){
+        printf("%s:%s:%d:> ",l_st_str,p_file,line);
+    } else {
+        printf("%s:%s:%d:%10s> ",l_st_str,p_file,line,p_function);
+    }
     va_start(l_va,p_fmt);
     l_ret=vprintf(p_fmt,l_va);
     printf("\n");

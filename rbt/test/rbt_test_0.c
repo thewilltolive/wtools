@@ -2,6 +2,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "lg.h"
 #include "w_rbt.h"
 #include "time.h"
 
@@ -48,7 +49,7 @@ static int rbt_test_insert(int nb){
     rb_red_blk_node * l_node_get = NULL;
     tree=RBTreeCreate(rtd_zlog_key_comp,IntDest,InfoDest,IntPrint,InfoPrint);
     if(NULL == tree){
-        TEST_LOG_ERROR("Failed to create a red black tree");
+        LG_ERROR("Failed to create a red black tree");
         return -1;
     }
     for(i=0;i<nb;i++){
@@ -56,11 +57,11 @@ static int rbt_test_insert(int nb){
         snprintf((char*)&(key_get[i])[0],sizeof(key_get[i]),"key%d",i);
         list_i[i] = i;
         if(NULL == (l_node = RBTreeInsert(tree,(void*)key[i],(void *)&list_i[i]))){
-            TEST_LOG_ERROR("Failed to create a red black node");
+            LG_ERROR("Failed to create a red black node");
             return -1;
         }
         if(NULL == (l_node_get = RBExactQuery(tree,(void*)key_get[i]))){
-            TEST_LOG_ERROR("Failed to get the red black node");
+            LG_ERROR("Failed to get the red black node");
             return -1;
         }
         IntPrint(l_node_get->key);
@@ -78,27 +79,27 @@ static int rbt_test_insert(int nb){
 static void rbt_validate(void){
 
     if(0 != rbt_test_insert(10)){
-        TEST_LOG_ERROR("Invalid rbt insert 10 elts");
+        LG_ERROR("Invalid rbt insert 10 elts");
     }else{
-        TEST_LOG_INFO("rbt insert 10 elts OK");
+        LG_INFO("rbt insert 10 elts OK");
     }
 
     if(0 != rbt_test_insert(100)){
-        TEST_LOG_ERROR("Invalid rbt insert 100 elts");
+        LG_ERROR("Invalid rbt insert 100 elts");
     }else{
-        TEST_LOG_INFO("rbt insert 100 elts OK");
+        LG_INFO("rbt insert 100 elts OK");
     }
 
     if(0 != rbt_test_insert(1000)){
-        TEST_LOG_ERROR("Invalid rbt insert 1000 elts");
+        LG_ERROR("Invalid rbt insert 1000 elts");
     }else{
-        TEST_LOG_INFO("rbt insert 1000 elts OK");
+        LG_INFO("rbt insert 1000 elts OK");
     }
 
     if(0 != rbt_test_insert(10000)){
-        TEST_LOG_ERROR("Invalid rbt insert 10000 elts");
+        LG_ERROR("Invalid rbt insert 10000 elts");
     }else{
-        TEST_LOG_INFO("rbt insert 10000 elts OK");
+        LG_INFO("rbt insert 10000 elts OK");
     }
 }
 

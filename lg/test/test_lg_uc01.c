@@ -19,6 +19,16 @@ static void test_lw_uc01_tc01(void){
     CU_ASSERT_EQUAL(0,lg_term());
 }
 
+static void test_lw_uc01_tc02(void){
+    lg_init_params_t l_lw_init_params=LG_INIT_PARAMS_INIT;
+
+    CU_ASSERT_EQUAL(0,lg_init(&l_lw_init_params));
+    CU_ASSERT_EQUAL(0,lg_lib_add("toto"));
+    LG_INFO("print a log: %s","toto");
+    LG_ERROR("print an error: %s","toto");
+    CU_ASSERT_EQUAL(0,lg_term());
+}
+
 int main(int argc, char **argv) {
     CU_pSuite pSuite = NULL;
     int num_of_failures = 0;
@@ -41,6 +51,12 @@ int main(int argc, char **argv) {
     if (NULL == CU_add_test(pSuite, "test_lw_uc01_tc01", test_lw_uc01_tc01)) {
         return CU_get_error();
     }
+    /* add the tests to the suite */
+    if (NULL == CU_add_test(pSuite, "test_lw_uc01_tc02", test_lw_uc01_tc02)) {
+        return CU_get_error();
+    }
+
+
 
 
     /* Run all tests using the CUnit Basic interface */
