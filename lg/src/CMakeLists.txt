@@ -4,4 +4,5 @@ add_library(${LG_LIB} SHARED
 	lg.c
     )
 target_include_directories(${LG_LIB} PUBLIC ../inc)
+install(TARGETS ${LG_LIB} DESTINATION lib)
 

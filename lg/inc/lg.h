@@ -75,6 +75,7 @@ extern int lg_print(lg_level_t   level,
              const char  *p_file, 
              int          line, 
              const char *p_function,
+             const char *p_cmp,
              char       *p_fmt, ...);
 
 
@@ -98,7 +99,7 @@ extern int lg_print(lg_level_t   level,
     /**
      * @brief Define the macros of various level.
      */
-#define LG_WARNING(format, ...) LG_THIS(LG_LEVEL_WARNING, format, ##__VA_ARGS__)
+#define LG_WARN(format, ...) LG_THIS(LG_LEVEL_WARN, format, ##__VA_ARGS__)
 #define LG_ERROR(format, ...) LG_THIS(LG_LEVEL_ERROR, format, ##__VA_ARGS__)
 #ifdef WTOOLS_DEBUG
 #define LG_INFO(format, ...) LG_THIS(LG_LEVEL_INFO, format, ##__VA_ARGS__)

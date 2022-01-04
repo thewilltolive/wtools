@@ -43,14 +43,31 @@ int lg_term(void){
     return(0);
 }
 
+int filename_offset_compute(const char *p_filename){
+    int l_i=0,l_ret_offset=0;
+
+    while(p_filename[l_i] != 0){
+        l_ret_offset++;
+        if ('/' == p_filename[l_i]){
+            l_ret_offset=l_i;
+        }
+        l_i++;
+    }
+    return(l_ret_offset);
+}
+
 int lg_print(lg_level_t     level,
               const char   *p_file,
               int           line,
               const char   *p_function,
+              const char   *p_cmp,
               char         *p_fmt, ...){
     int         l_ret;
     va_list     l_va;
     const char *l_st_str=NULL;
+    int         l_filename_offset=filename_offset_compute(p_file);
+
+    (void)p_cmp;
 
     switch(level){
     case LG_LEVEL_DEBUG:
@@ -73,9 +90,9 @@ int lg_print(lg_level_t     level,
         break;
     }
     if (NULL == p_function){
-        printf("%s:%s:%d:> ",l_st_str,p_file,line);
+        printf("%s:%s:%d:> ",l_st_str,&p_file[l_filename_offset],line);
     } else {
-        printf("%s:%s:%d:%10s> ",l_st_str,p_file,line,p_function);
+        printf("%s:%s:%d:%10s> ",l_st_str,&p_file[l_filename_offset],line,p_function);
     }
     va_start(l_va,p_fmt);
     l_ret=vprintf(p_fmt,l_va);
